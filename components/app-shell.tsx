@@ -1,0 +1,48 @@
+"use client";
+import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
+import { Bookmark, Check, Compass, Eye, Film, Play, Search, X } from "lucide-react";
+import { featured, fallbackCatalog, imageUrl } from "@/lib/catalog";
+import { MediaItem } from "@/lib/types";
+import { useWatchlist } from "@/store/watchlist";
+import { MediaCard } from "./media-card";
+import { DetailModal } from "./detail-modal";
+
+type View = "home" | "search" | "list";
+
+export function AppShell() {
+  const [view, setView] = useState<View>("home"); const [catalog, setCatalog] = useState(fallbackCatalog); const [selected, setSelected] = useState<MediaItem | null>(null); const [query, setQuery] = useState(""); const [filter, setFilter] = useState<"all" | "pending" | "watched">("all");
+  const items = useWatchlist((state) => state.items); const add = useWatchlist((state) => state.add); const hasFeatured = useWatchlist((state) => state.has(featured.id));
+  useEffect(() => { fetch("/api/tmdb").then((res) => res.json()).then((data) => data.results?.length && setCatalog(data.results)).catch(() => {}); }, []);
+  useEffect(() => { if (view !== "search") return; const timer = setTimeout(() => { fetch(`/api/tmdb${query ? `?query=${encodeURIComponent(query)}` : ""}`).then((res) => res.json()).then((data) => setCatalog(data.results || [])).catch(() => {}); }, 350); return () => clearTimeout(timer); }, [query, view]);
+  const list = useMemo(() => items.filter((item) => filter === "all" || (filter === "watched" ? item.watched : !item.watched)), [items, filter]);
+  const nav = (next: View) => { setView(next); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  return <main className="min-h-screen pb-28">
+    <header className="fixed inset-x-0 top-0 z-40 flex h-20 items-center justify-between bg-gradient-to-b from-black/85 to-transparent px-5 sm:px-10 lg:px-14">
+      <button onClick={() => nav("home")} className="flex items-center gap-2 text-xl font-bold tracking-tight"><span className="grid size-9 place-items-center rounded-xl bg-white text-black"><Play size={17} fill="currentColor"/></span> later</button>
+      <nav className="glass hidden items-center gap-1 rounded-full p-1 sm:flex">{[["home", "Inicio"], ["search", "Explorar"], ["list", "Mi lista"]].map(([key,label]) => <button key={key} onClick={() => nav(key as View)} className={`rounded-full px-5 py-2 text-sm transition ${view === key ? "bg-white text-black" : "text-zinc-300 hover:text-white"}`}>{label}</button>)}</nav>
+      <button onClick={() => nav("search")} className="grid size-10 place-items-center rounded-full bg-white/10 backdrop-blur hover:bg-white/20" aria-label="Buscar"><Search size={19}/></button>
+    </header>
+
+    {view === "home" && <>
+      <section className="relative flex min-h-[78vh] items-end overflow-hidden px-5 pb-16 sm:px-10 lg:min-h-[88vh] lg:px-14 lg:pb-24">
+        <Image src={imageUrl(featured.backdropPath, "backdrop")} alt="Escena destacada de Interstellar" fill priority sizes="100vw" className="object-cover object-center"/>
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/30 to-transparent"/><div className="absolute inset-0 bg-gradient-to-t from-[#050507] via-transparent to-black/20"/>
+        <div className="relative max-w-2xl"><p className="mb-4 text-xs font-bold uppercase tracking-[.32em] text-blue-300">Una selección para ti</p><h1 className="text-5xl font-bold tracking-[-.05em] sm:text-7xl lg:text-8xl">Interstellar</h1><p className="mt-5 max-w-xl text-base leading-7 text-zinc-200 sm:text-lg">Una odisea a través del espacio y el tiempo para encontrar un nuevo hogar para la humanidad.</p>
+          <div className="mt-7 flex gap-3"><button onClick={() => setSelected(featured)} className="flex items-center gap-2 rounded-full bg-white px-6 py-3.5 font-semibold text-black transition hover:scale-105"><Play size={18} fill="currentColor"/> Ver detalles</button><button disabled={hasFeatured} onClick={() => add(featured)} className="glass flex items-center gap-2 rounded-full px-6 py-3.5 font-semibold disabled:opacity-70">{hasFeatured ? <Check size={19}/> : <Bookmark size={19}/>} {hasFeatured ? "En tu lista" : "Mi lista"}</button></div>
+        </div>
+      </section>
+      <MediaRow title="Tendencias de la semana" subtitle="Historias de las que todos están hablando" items={catalog} open={setSelected}/>
+      <MediaRow title="Una noche épica" subtitle="Grandes mundos, decisiones imposibles" items={[...catalog].reverse()} open={setSelected}/>
+    </>}
+
+    {view === "search" && <section className="px-5 pt-32 sm:px-10 lg:px-14"><p className="text-xs font-bold uppercase tracking-[.3em] text-blue-400">Explora</p><h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-6xl">Encuentra tu próxima historia.</h1><div className="mt-10 flex max-w-3xl items-center gap-4 rounded-2xl bg-white/10 px-5 py-4 ring-1 ring-white/10 focus-within:ring-white/40"><Search className="text-zinc-400"/><input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Películas, series…" className="w-full bg-transparent text-lg outline-none placeholder:text-zinc-600"/>{query && <button onClick={() => setQuery("")}><X size={19}/></button>}</div><div className="mt-12 grid grid-cols-2 gap-x-4 gap-y-9 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">{catalog.map((item) => <MediaCard key={`${item.mediaType}-${item.id}`} item={item} onOpen={setSelected}/>)}</div></section>}
+
+    {view === "list" && <section className="px-5 pt-32 sm:px-10 lg:px-14"><p className="text-xs font-bold uppercase tracking-[.3em] text-blue-400">Tu espacio</p><div className="mt-3 flex flex-wrap items-end justify-between gap-6"><div><h1 className="text-4xl font-bold tracking-tight sm:text-6xl">Mi lista</h1><p className="mt-3 text-zinc-500">{items.length} {items.length === 1 ? "historia guardada" : "historias guardadas"}</p></div><div className="flex rounded-full bg-white/10 p-1">{[["all","Todas"],["pending","Pendientes"],["watched","Vistas"]].map(([key,label]) => <button key={key} onClick={() => setFilter(key as typeof filter)} className={`rounded-full px-4 py-2 text-sm ${filter === key ? "bg-white text-black" : "text-zinc-400"}`}>{label}</button>)}</div></div>
+      {list.length ? <div className="mt-12 grid grid-cols-2 gap-x-4 gap-y-9 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">{list.map((item) => <MediaCard key={item.id} item={item} onOpen={setSelected}/>)}</div> : <div className="mt-20 flex flex-col items-center text-center"><span className="grid size-20 place-items-center rounded-full bg-white/5"><Film size={32} className="text-zinc-600"/></span><h2 className="mt-6 text-2xl font-semibold">Tu lista está esperando</h2><p className="mt-2 max-w-sm text-zinc-500">Explora el catálogo y guarda todo lo que quieras ver después.</p><button onClick={() => nav("search")} className="mt-6 rounded-full bg-white px-6 py-3 font-semibold text-black">Explorar títulos</button></div>}</section>}
+
+    <nav className="glass fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 gap-1 rounded-full p-1.5 shadow-2xl sm:hidden">{[["home",Compass],["search",Search],["list",Eye]].map(([key,Icon]) => <button key={key as string} onClick={() => nav(key as View)} className={`grid size-12 place-items-center rounded-full ${view === key ? "bg-white text-black" : "text-zinc-400"}`} aria-label={key as string}><Icon size={20}/></button>)}</nav>
+    {selected && <DetailModal item={selected} close={() => setSelected(null)}/>} 
+  </main>;
+}
+function MediaRow({ title, subtitle, items, open }: { title: string; subtitle: string; items: MediaItem[]; open: (item: MediaItem) => void }) { return <section className="mb-16 pl-5 sm:pl-10 lg:pl-14"><h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h2><p className="mt-1 text-sm text-zinc-500">{subtitle}</p><div className="hide-scrollbar mt-6 flex gap-4 overflow-x-auto pr-5 pb-8 sm:gap-5 sm:pr-10 lg:pr-14">{items.map((item) => <MediaCard key={`${title}-${item.id}`} item={item} onOpen={open}/>)}</div></section> }
