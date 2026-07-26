@@ -20,6 +20,6 @@ export const useWatchlist = create<WatchlistStore>()(
       toggleWatched: (id) => set((state) => ({ items: state.items.map((item) => item.id === id ? { ...item, watched: !item.watched } : item) })),
       has: (id) => get().items.some((item) => item.id === id),
     }),
-    { name: "later-watchlist" },
+    { name: "later-watchlist", skipHydration: true },
   ),
 );
