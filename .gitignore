@@ -4,5 +4,7 @@ out
 .env*
 !.env.example
 *.log
+*.tsbuildinfo
 .DS_Store
 .vercel
+GOOGLE_OAUTH_CREDENTIALS.md

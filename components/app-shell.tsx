@@ -1,7 +1,8 @@
 "use client";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bookmark, Check, Compass, Eye, Film, LoaderCircle, Play, Search, X } from "lucide-react";
+import { Bookmark, Check, Compass, Eye, Film, LoaderCircle, LogOut, Play, Search, X } from "lucide-react";
+import { getAuthClient } from "@/lib/auth/client";
 import { featured, fallbackCatalog, imageUrl } from "@/lib/catalog";
 import { MediaItem } from "@/lib/types";
 import { useWatchlist } from "@/store/watchlist";
@@ -10,8 +11,9 @@ import { DetailModal } from "./detail-modal";
 
 type View = "home" | "search" | "list";
 
-export function AppShell() {
+export function AppShell({ user }: { user: { email: string; name: string } }) {
   const [view, setView] = useState<View>("home"); const [homeCatalog, setHomeCatalog] = useState(fallbackCatalog); const [searchResults, setSearchResults] = useState(fallbackCatalog); const [isSearching, setIsSearching] = useState(false); const [searchError, setSearchError] = useState(false); const [selected, setSelected] = useState<MediaItem | null>(null); const [query, setQuery] = useState(""); const [filter, setFilter] = useState<"all" | "pending" | "watched">("all");
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const items = useWatchlist((state) => state.items); const add = useWatchlist((state) => state.add); const hasFeatured = useWatchlist((state) => state.has(featured.id));
   useEffect(() => { useWatchlist.persist.rehydrate(); }, []);
   useEffect(() => { fetch("/api/tmdb").then((res) => res.json()).then((data) => data.results?.length && setHomeCatalog(data.results)).catch(() => {}); }, []);
@@ -45,11 +47,26 @@ export function AppShell() {
   const list = useMemo(() => items.filter((item) => filter === "all" || (filter === "watched" ? item.watched : !item.watched)), [items, filter]);
   const nav = (next: View) => { setView(next); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const closeModal = useCallback(() => setSelected(null), []);
+  const signOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await getAuthClient().signOut();
+    } finally {
+      window.location.assign("/auth/sign-in");
+    }
+  };
   return <main className="min-h-screen pb-28">
     <header className="fixed inset-x-0 top-0 z-40 flex h-20 items-center justify-between bg-gradient-to-b from-black/85 to-transparent px-5 sm:px-10 lg:px-14">
       <button onClick={() => nav("home")} className="flex items-center gap-2 text-xl font-bold tracking-tight"><span className="grid size-9 place-items-center rounded-xl bg-white text-black"><Play size={17} fill="currentColor"/></span> later</button>
       <nav className="glass hidden items-center gap-1 rounded-full p-1 sm:flex">{[["home", "Inicio"], ["search", "Explorar"], ["list", "Mi lista"]].map(([key,label]) => <button key={key} onClick={() => nav(key as View)} className={`rounded-full px-5 py-2 text-sm transition ${view === key ? "bg-white text-black" : "text-zinc-300 hover:text-white"}`}>{label}</button>)}</nav>
-      <button onClick={() => nav("search")} className="grid size-10 place-items-center rounded-full bg-white/10 backdrop-blur hover:bg-white/20" aria-label="Buscar"><Search size={19}/></button>
+      <div className="flex items-center gap-2">
+        <button onClick={() => nav("search")} className="grid size-10 place-items-center rounded-full bg-white/10 backdrop-blur hover:bg-white/20" aria-label="Buscar"><Search size={19}/></button>
+        <div className="glass flex items-center gap-2 rounded-full p-1 pr-2">
+          <span className="grid size-8 place-items-center rounded-full bg-white text-sm font-bold text-black" title={user.email}>{user.name?.charAt(0).toUpperCase() || "F"}</span>
+          <span className="hidden max-w-36 truncate text-xs text-zinc-300 lg:block">{user.email}</span>
+          <button type="button" onClick={signOut} disabled={isSigningOut} className="grid size-8 place-items-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-white disabled:cursor-wait" aria-label="Cerrar sesión">{isSigningOut ? <LoaderCircle className="animate-spin" size={16}/> : <LogOut size={16}/>}</button>
+        </div>
+      </div>
     </header>
 
     {view === "home" && <>

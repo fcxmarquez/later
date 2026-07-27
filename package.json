@@ -9,6 +9,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@neondatabase/auth": "^0.4.2-beta",
     "lucide-react": "latest",
     "next": "latest",
     "react": "latest",
