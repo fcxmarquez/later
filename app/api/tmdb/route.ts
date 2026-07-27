@@ -21,15 +21,32 @@ export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get("query")?.trim();
   const token = process.env.TMDB_API_TOKEN;
   if (!token) {
-    const results = query ? fallbackCatalog.filter((item) => item.title.toLowerCase().includes(query.toLowerCase())) : fallbackCatalog;
+    const results = query
+      ? fallbackCatalog.filter((item) =>
+          item.title.toLowerCase().includes(query.toLowerCase()),
+        )
+      : fallbackCatalog;
     return NextResponse.json({ results, fallback: true });
   }
-  const endpoint = query ? `search/multi?query=${encodeURIComponent(query)}` : "trending/all/week?";
-  const response = await fetch(`https://api.themoviedb.org/3/${endpoint}${query ? "&" : ""}language=es-ES`, { headers: { Authorization: `Bearer ${token}` }, next: { revalidate: 3600 } });
-  if (!response.ok) return NextResponse.json({ results: fallbackCatalog, fallback: true });
+  const endpoint = query
+    ? `search/multi?query=${encodeURIComponent(query)}`
+    : "trending/all/week?";
+  const response = await fetch(
+    `https://api.themoviedb.org/3/${endpoint}${query ? "&" : ""}language=es-ES`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      next: { revalidate: 3600 },
+    },
+  );
+  if (!response.ok)
+    return NextResponse.json({ results: fallbackCatalog, fallback: true });
   const data: { results: TmdbResult[] } = await response.json();
   const results: MediaItem[] = data.results
-    .filter((item) => (item.media_type === "movie" || item.media_type === "tv") && item.poster_path)
+    .filter(
+      (item) =>
+        (item.media_type === "movie" || item.media_type === "tv") &&
+        item.poster_path,
+    )
     .map((item) => ({
       id: item.id,
       title: item.title || item.name || "Sin título",

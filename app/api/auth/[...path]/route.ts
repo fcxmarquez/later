@@ -13,7 +13,10 @@ export async function POST(request: Request, context: AuthRouteContext) {
   const authPath = path.join("/");
 
   if (authPath === "sign-in/social") {
-    const payload = (await request.clone().json().catch(() => null)) as {
+    const payload = (await request
+      .clone()
+      .json()
+      .catch(() => null)) as {
       provider?: string;
     } | null;
 
