@@ -8,8 +8,12 @@ loadEnv({ path: ".env.local" });
 loadEnv();
 
 async function main() {
-  if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== "production") {
-    console.log(`Skipping migrations (VERCEL_ENV=${process.env.VERCEL_ENV}).`);
+  const productionOnly = process.argv.includes("--production-only");
+
+  if (productionOnly && process.env.VERCEL_ENV !== "production") {
+    console.log(
+      `Skipping production migrations (VERCEL_ENV=${process.env.VERCEL_ENV ?? "local"}).`,
+    );
     return;
   }
 
