@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+        env:
+          # Dummy values so Next can compile auth/db modules in CI.
+          # Real secrets are not required for a production build of this app.
+          NEON_AUTH_BASE_URL: https://example.neonauth.us-east-1.aws.neon.tech/neondb/auth
+          NEON_AUTH_COOKIE_SECRET: ci-placeholder-secret-at-least-32-chars
+          DATABASE_URL: postgresql://user:password@ep-example-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require
