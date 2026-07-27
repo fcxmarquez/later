@@ -7,7 +7,7 @@ import { MediaItem } from "@/lib/types";
 import { useWatchlist } from "@/store/watchlist";
 
 export function DetailModal({ item, close }: { item: MediaItem; close: () => void }) {
-  const saved = useWatchlist((state) => state.items.find((entry) => entry.id === item.id));
+  const saved = useWatchlist((state) => state.items.find((entry) => entry.id === item.id && entry.mediaType === item.mediaType));
   const { add, remove, toggleWatched } = useWatchlist();
   const titleId = useId();
   const descriptionId = useId();
@@ -61,8 +61,8 @@ export function DetailModal({ item, close }: { item: MediaItem; close: () => voi
         <p id={descriptionId} className="mt-5 max-w-2xl text-base leading-7 text-zinc-300 sm:text-lg">{item.overview}</p>
         <div className="mt-7 flex flex-wrap gap-3">
           {!saved ? <button onClick={() => add(item)} className="flex items-center gap-2 rounded-full bg-white px-6 py-3 font-semibold text-black transition hover:scale-105"><Plus size={19}/> Añadir a mi lista</button> : <>
-            <button onClick={() => toggleWatched(item.id)} className={`flex items-center gap-2 rounded-full px-6 py-3 font-semibold transition hover:scale-105 ${saved.watched ? "bg-emerald-400 text-black" : "bg-white text-black"}`}>{saved.watched ? <Check size={19}/> : <Eye size={19}/>} {saved.watched ? "Ya la viste" : "Marcar como vista"}</button>
-            <button onClick={() => remove(item.id)} className="rounded-full bg-white/10 px-6 py-3 font-semibold hover:bg-white/20">Quitar de mi lista</button>
+            <button onClick={() => toggleWatched(item)} className={`flex items-center gap-2 rounded-full px-6 py-3 font-semibold transition hover:scale-105 ${saved.watched ? "bg-emerald-400 text-black" : "bg-white text-black"}`}>{saved.watched ? <Check size={19}/> : <Eye size={19}/>} {saved.watched ? "Ya la viste" : "Marcar como vista"}</button>
+            <button onClick={() => remove(item)} className="rounded-full bg-white/10 px-6 py-3 font-semibold hover:bg-white/20">Quitar de mi lista</button>
           </>}
         </div>
       </div>

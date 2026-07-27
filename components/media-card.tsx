@@ -6,7 +6,7 @@ import { MediaItem } from "@/lib/types";
 import { useWatchlist } from "@/store/watchlist";
 
 export function MediaCard({ item, onOpen }: { item: MediaItem; onOpen: (item: MediaItem) => void }) {
-  const saved = useWatchlist((state) => state.items.find((entry) => entry.id === item.id));
+  const saved = useWatchlist((state) => state.items.find((entry) => entry.id === item.id && entry.mediaType === item.mediaType));
   const add = useWatchlist((state) => state.add);
   return <article className="group relative w-[155px] shrink-0 sm:w-[190px] lg:w-[215px]">
     <button type="button" onClick={() => onOpen(item)} className="absolute inset-0 z-10 cursor-pointer rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#050507]" aria-label={`Ver detalles de ${item.title}`}/>
