@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Play } from "lucide-react";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
-import { ALLOWED_EMAIL, isAllowedUser, isAuthConfigured } from "@/lib/auth/config";
+import { isAllowedUser, isAuthConfigured } from "@/lib/auth/config";
 import { getAuth } from "@/lib/auth/server";
 
 export const dynamic = "force-dynamic";
@@ -67,8 +67,7 @@ export default async function SignInPage({
         )}
 
         <p className="mt-6 text-center text-xs leading-5 text-zinc-600">
-          La sincronización en la nube está limitada a{" "}
-          <span className="text-zinc-400">{ALLOWED_EMAIL}</span>
+          La sincronización en la nube requiere una cuenta autorizada.
         </p>
       </section>
     </main>

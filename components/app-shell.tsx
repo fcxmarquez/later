@@ -15,7 +15,7 @@ type View = "home" | "search" | "list";
 
 type AppShellProps = {
   mode: WatchlistMode;
-  user: { email: string; name: string } | null;
+  user: { name: string } | null;
   initialWatchlist: SavedMedia[];
 };
 
@@ -104,8 +104,8 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
           </div>
         ) : (
           <div className="glass flex items-center gap-2 rounded-full p-1 pr-2">
-            <span className="grid size-8 place-items-center rounded-full bg-white text-sm font-bold text-black" title={user?.email}>{user?.name?.charAt(0).toUpperCase() || "F"}</span>
-            <span className="hidden max-w-36 truncate text-xs text-zinc-300 lg:block">{user?.email}</span>
+            <span className="grid size-8 place-items-center rounded-full bg-white text-sm font-bold text-black" title="Cuenta autenticada">{user?.name?.charAt(0).toUpperCase() || "F"}</span>
+            <span className="hidden max-w-36 truncate text-xs text-zinc-300 lg:block">{user?.name}</span>
             <button type="button" onClick={signOut} disabled={isSigningOut} className="grid size-8 place-items-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-white disabled:cursor-wait" aria-label="Cerrar sesión">{isSigningOut ? <LoaderCircle className="animate-spin" size={16}/> : <LogOut size={16}/>}</button>
           </div>
         )}

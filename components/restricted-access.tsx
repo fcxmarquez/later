@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { LoaderCircle, LockKeyhole, RotateCcw } from "lucide-react";
-import { ALLOWED_EMAIL } from "@/lib/auth/config";
 import { getAuthClient } from "@/lib/auth/client";
 
 export function RestrictedAccess() {
@@ -27,8 +26,7 @@ export function RestrictedAccess() {
           Esta cuenta no tiene acceso.
         </h1>
         <p className="mt-4 text-sm leading-6 text-zinc-400">
-          Later está disponible únicamente para{" "}
-          <span className="text-zinc-200">{ALLOWED_EMAIL}</span>.
+          Later está disponible únicamente para la cuenta autorizada.
         </p>
         <button
           type="button"

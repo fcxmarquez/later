@@ -23,7 +23,6 @@ export default async function Home() {
         mode="authenticated"
         initialWatchlist={initialWatchlist}
         user={{
-          email: session.user.email,
           name: session.user.name,
         }}
       />
