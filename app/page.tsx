@@ -9,18 +9,22 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const { data: session } = await getAuth().getSession();
 
-  if (!session?.user) redirect("/auth/sign-in");
-  if (!isAllowedUser(session.user)) redirect("/auth/unauthorized");
+  if (session?.user) {
+    if (!isAllowedUser(session.user)) redirect("/auth/unauthorized");
 
-  const initialWatchlist = await getWatchlist(session.user.id);
+    const initialWatchlist = await getWatchlist(session.user.id);
 
-  return (
-    <AppShell
-      initialWatchlist={initialWatchlist}
-      user={{
-        email: session.user.email,
-        name: session.user.name,
-      }}
-    />
-  );
+    return (
+      <AppShell
+        mode="authenticated"
+        initialWatchlist={initialWatchlist}
+        user={{
+          email: session.user.email,
+          name: session.user.name,
+        }}
+      />
+    );
+  }
+
+  return <AppShell mode="guest" initialWatchlist={[]} user={null} />;
 }

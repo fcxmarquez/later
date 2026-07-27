@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fallbackCatalog } from "@/lib/catalog";
-import { isAllowedUser } from "@/lib/auth/config";
-import { getAuth } from "@/lib/auth/server";
 import { MediaItem } from "@/lib/types";
 
 type TmdbResult = {
@@ -18,16 +16,8 @@ type TmdbResult = {
 };
 
 export async function GET(request: NextRequest) {
-  const { data: session } = await getAuth().getSession();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
-  if (!isAllowedUser(session.user)) {
-    return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
-  }
-
+  // Catalog is public so guest mode can browse and search.
+  // Watchlist mutations remain authenticated-only.
   const query = request.nextUrl.searchParams.get("query")?.trim();
   const token = process.env.TMDB_API_TOKEN;
   if (!token) {

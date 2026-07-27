@@ -43,6 +43,14 @@ export function RestrictedAccess() {
           )}
           {isSigningOut ? "Cerrando sesión…" : "Probar con otra cuenta"}
         </button>
+        <button
+          type="button"
+          disabled={isSigningOut}
+          onClick={() => window.location.assign("/")}
+          className="mt-3 flex w-full items-center justify-center rounded-full bg-white/10 px-5 py-3.5 font-semibold text-white ring-1 ring-white/10 transition hover:bg-white/15 disabled:cursor-wait disabled:opacity-70"
+        >
+          Continuar como invitado
+        </button>
       </section>
     </main>
   );

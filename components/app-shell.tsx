@@ -1,32 +1,41 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bookmark, Check, Compass, Eye, Film, LoaderCircle, LogOut, Play, Search, X } from "lucide-react";
+import { Bookmark, Check, Compass, Eye, Film, LoaderCircle, LogIn, LogOut, Play, Search, X } from "lucide-react";
 import { getAuthClient } from "@/lib/auth/client";
 import { featured, fallbackCatalog, imageUrl } from "@/lib/catalog";
+import { clearGuestWatchlist, GUEST_WATCHLIST_KEY, isSavedMedia } from "@/lib/guest-storage";
 import type { MediaItem, SavedMedia } from "@/lib/types";
-import { isLegacySavedMedia, useWatchlist } from "@/store/watchlist";
+import { type WatchlistMode, useWatchlist } from "@/store/watchlist";
 import { MediaCard } from "./media-card";
 import { DetailModal } from "./detail-modal";
 
 type View = "home" | "search" | "list";
 
-export function AppShell({ user, initialWatchlist }: { user: { email: string; name: string }; initialWatchlist: SavedMedia[] }) {
+type AppShellProps = {
+  mode: WatchlistMode;
+  user: { email: string; name: string } | null;
+  initialWatchlist: SavedMedia[];
+};
+
+export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
   const [view, setView] = useState<View>("home"); const [homeCatalog, setHomeCatalog] = useState(fallbackCatalog); const [searchResults, setSearchResults] = useState(fallbackCatalog); const [isSearching, setIsSearching] = useState(false); const [searchError, setSearchError] = useState(false); const [selected, setSelected] = useState<MediaItem | null>(null); const [query, setQuery] = useState(""); const [filter, setFilter] = useState<"all" | "pending" | "watched">("all");
   const [isSigningOut, setIsSigningOut] = useState(false);
   const legacyMigrationStarted = useRef(false);
+  const isGuest = mode === "guest";
   const items = useWatchlist((state) => state.items); const add = useWatchlist((state) => state.add); const initialize = useWatchlist((state) => state.initialize); const error = useWatchlist((state) => state.error); const clearError = useWatchlist((state) => state.clearError); const hasFeatured = useWatchlist((state) => state.has(featured));
   useEffect(() => {
-    initialize(initialWatchlist);
-    if (legacyMigrationStarted.current) return;
+    initialize(initialWatchlist, mode);
+    if (isGuest || legacyMigrationStarted.current) return;
     legacyMigrationStarted.current = true;
 
-    const raw = window.localStorage.getItem("later-watchlist");
+    const raw = window.localStorage.getItem(GUEST_WATCHLIST_KEY);
     if (!raw) return;
 
     try {
       const parsed = JSON.parse(raw) as { state?: { items?: unknown[] } };
-      const legacyItems = parsed.state?.items?.filter(isLegacySavedMedia) ?? [];
+      const legacyItems = parsed.state?.items?.filter(isSavedMedia) ?? [];
       const migrateItem = async (item: SavedMedia) => {
         const added = await useWatchlist.getState().add(item);
         if (!added || !item.watched) return added;
@@ -36,12 +45,12 @@ export function AppShell({ user, initialWatchlist }: { user: { email: string; na
       };
 
       void Promise.all(legacyItems.map(migrateItem)).then((results) => {
-        if (results.every(Boolean)) window.localStorage.removeItem("later-watchlist");
+        if (results.every(Boolean)) clearGuestWatchlist();
       });
     } catch {
-      window.localStorage.removeItem("later-watchlist");
+      clearGuestWatchlist();
     }
-  }, [initialWatchlist, initialize]);
+  }, [initialWatchlist, initialize, isGuest, mode]);
   useEffect(() => { fetch("/api/tmdb").then((res) => res.json()).then((data) => data.results?.length && setHomeCatalog(data.results)).catch(() => {}); }, []);
   useEffect(() => {
     if (view !== "search") return;
@@ -87,11 +96,19 @@ export function AppShell({ user, initialWatchlist }: { user: { email: string; na
       <nav className="glass hidden items-center gap-1 rounded-full p-1 sm:flex">{[["home", "Inicio"], ["search", "Explorar"], ["list", "Mi lista"]].map(([key,label]) => <button key={key} onClick={() => nav(key as View)} className={`rounded-full px-5 py-2 text-sm transition ${view === key ? "bg-white text-black" : "text-zinc-300 hover:text-white"}`}>{label}</button>)}</nav>
       <div className="flex items-center gap-2">
         <button onClick={() => nav("search")} className="grid size-10 place-items-center rounded-full bg-white/10 backdrop-blur hover:bg-white/20" aria-label="Buscar"><Search size={19}/></button>
-        <div className="glass flex items-center gap-2 rounded-full p-1 pr-2">
-          <span className="grid size-8 place-items-center rounded-full bg-white text-sm font-bold text-black" title={user.email}>{user.name?.charAt(0).toUpperCase() || "F"}</span>
-          <span className="hidden max-w-36 truncate text-xs text-zinc-300 lg:block">{user.email}</span>
-          <button type="button" onClick={signOut} disabled={isSigningOut} className="grid size-8 place-items-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-white disabled:cursor-wait" aria-label="Cerrar sesión">{isSigningOut ? <LoaderCircle className="animate-spin" size={16}/> : <LogOut size={16}/>}</button>
-        </div>
+        {isGuest ? (
+          <div className="glass flex items-center gap-2 rounded-full p-1 pr-2">
+            <span className="grid size-8 place-items-center rounded-full bg-white/15 text-sm font-bold text-white" title="Modo invitado">I</span>
+            <span className="hidden max-w-36 truncate text-xs text-zinc-300 lg:block">Invitado</span>
+            <Link href="/auth/sign-in" className="grid size-8 place-items-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-white" aria-label="Iniciar sesión"><LogIn size={16}/></Link>
+          </div>
+        ) : (
+          <div className="glass flex items-center gap-2 rounded-full p-1 pr-2">
+            <span className="grid size-8 place-items-center rounded-full bg-white text-sm font-bold text-black" title={user?.email}>{user?.name?.charAt(0).toUpperCase() || "F"}</span>
+            <span className="hidden max-w-36 truncate text-xs text-zinc-300 lg:block">{user?.email}</span>
+            <button type="button" onClick={signOut} disabled={isSigningOut} className="grid size-8 place-items-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-white disabled:cursor-wait" aria-label="Cerrar sesión">{isSigningOut ? <LoaderCircle className="animate-spin" size={16}/> : <LogOut size={16}/>}</button>
+          </div>
+        )}
       </div>
     </header>
 
@@ -113,7 +130,7 @@ export function AppShell({ user, initialWatchlist }: { user: { email: string; na
       </div>
     </section>}
 
-    {view === "list" && <section className="px-5 pt-32 sm:px-10 lg:px-14"><p className="text-xs font-bold uppercase tracking-[.3em] text-blue-400">Tu espacio</p><div className="mt-3 flex flex-wrap items-end justify-between gap-6"><div><h1 className="text-4xl font-bold tracking-tight sm:text-6xl">Mi lista</h1><p className="mt-3 text-zinc-500">{items.length} {items.length === 1 ? "historia guardada" : "historias guardadas"}</p></div><div className="flex rounded-full bg-white/10 p-1">{[["all","Todas"],["pending","Pendientes"],["watched","Vistas"]].map(([key,label]) => <button key={key} onClick={() => setFilter(key as typeof filter)} className={`rounded-full px-4 py-2 text-sm ${filter === key ? "bg-white text-black" : "text-zinc-400"}`}>{label}</button>)}</div></div>
+    {view === "list" && <section className="px-5 pt-32 sm:px-10 lg:px-14"><p className="text-xs font-bold uppercase tracking-[.3em] text-blue-400">Tu espacio</p><div className="mt-3 flex flex-wrap items-end justify-between gap-6"><div><h1 className="text-4xl font-bold tracking-tight sm:text-6xl">Mi lista</h1><p className="mt-3 text-zinc-500">{items.length} {items.length === 1 ? "historia guardada" : "historias guardadas"}{isGuest ? " · en este dispositivo" : ""}</p></div><div className="flex rounded-full bg-white/10 p-1">{[["all","Todas"],["pending","Pendientes"],["watched","Vistas"]].map(([key,label]) => <button key={key} onClick={() => setFilter(key as typeof filter)} className={`rounded-full px-4 py-2 text-sm ${filter === key ? "bg-white text-black" : "text-zinc-400"}`}>{label}</button>)}</div></div>
       {list.length ? <div className="mt-12 grid grid-cols-2 gap-x-4 gap-y-9 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">{list.map((item) => <MediaCard key={`${item.mediaType}-${item.id}`} item={item} onOpen={setSelected}/>)}</div> : items.length === 0 ? <div className="mt-20 flex flex-col items-center text-center"><span className="grid size-20 place-items-center rounded-full bg-white/5"><Film size={32} className="text-zinc-600"/></span><h2 className="mt-6 text-2xl font-semibold">Tu lista está esperando</h2><p className="mt-2 max-w-sm text-zinc-500">Explora el catálogo y guarda todo lo que quieras ver después.</p><button onClick={() => nav("search")} className="mt-6 rounded-full bg-white px-6 py-3 font-semibold text-black">Explorar títulos</button></div> : filter === "pending" ? <div className="mt-20 flex flex-col items-center text-center"><span className="grid size-20 place-items-center rounded-full bg-emerald-400/10"><Check size={32} className="text-emerald-400"/></span><h2 className="mt-6 text-2xl font-semibold">No tienes historias pendientes</h2><p className="mt-2 max-w-sm text-zinc-500">Todo lo que guardaste ya está marcado como visto.</p><button onClick={() => setFilter("watched")} className="mt-6 rounded-full bg-white px-6 py-3 font-semibold text-black">Ver historias vistas</button></div> : <div className="mt-20 flex flex-col items-center text-center"><span className="grid size-20 place-items-center rounded-full bg-white/5"><Eye size={32} className="text-zinc-600"/></span><h2 className="mt-6 text-2xl font-semibold">Aún no has marcado ninguna como vista</h2><p className="mt-2 max-w-sm text-zinc-500">Cuando termines una historia, podrás encontrarla aquí.</p><button onClick={() => setFilter("pending")} className="mt-6 rounded-full bg-white px-6 py-3 font-semibold text-black">Ver historias pendientes</button></div>}</section>}
 
     <nav className="glass fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 gap-1 rounded-full p-1.5 shadow-2xl sm:hidden">{[["home",Compass,"Inicio"],["search",Search,"Explorar"],["list",Eye,"Mi lista"]].map(([key,Icon,label]) => <button key={key as string} onClick={() => nav(key as View)} className={`grid size-12 place-items-center rounded-full ${view === key ? "bg-white text-black" : "text-zinc-400"}`} aria-label={label as string}><Icon size={20}/></button>)}</nav>

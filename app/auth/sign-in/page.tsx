@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Play } from "lucide-react";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
@@ -37,11 +38,18 @@ export default async function SignInPage({
           Tu lista te espera.
         </h1>
         <p className="mx-auto mt-4 max-w-sm text-center text-sm leading-6 text-zinc-400">
-          Inicia sesión con la cuenta autorizada para entrar a tu watchlist.
+          Entra con Google para sincronizar en la nube, o continúa como invitado
+          y guarda tu lista en este dispositivo.
         </p>
 
-        <div className="mt-8">
+        <div className="mt-8 space-y-3">
           <GoogleSignInButton />
+          <Link
+            href="/"
+            className="flex w-full items-center justify-center rounded-full bg-white/10 px-5 py-3.5 font-semibold text-white ring-1 ring-white/10 transition hover:bg-white/15"
+          >
+            Continuar como invitado
+          </Link>
         </div>
 
         {error && (
@@ -54,7 +62,7 @@ export default async function SignInPage({
         )}
 
         <p className="mt-6 text-center text-xs leading-5 text-zinc-600">
-          Acceso limitado a{" "}
+          La sincronización en la nube está limitada a{" "}
           <span className="text-zinc-400">{ALLOWED_EMAIL}</span>
         </p>
       </section>

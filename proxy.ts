@@ -1,8 +1,28 @@
+import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getAuth } from "@/lib/auth/server";
 
-export default function proxy(request: NextRequest) {
-  return getAuth().middleware({ loginUrl: "/auth/sign-in" })(request);
+const GUEST_ALLOWED_PATHS = new Set(["/", "/auth/unauthorized"]);
+
+export default async function proxy(request: NextRequest) {
+  const response = await getAuth().middleware({ loginUrl: "/auth/sign-in" })(
+    request,
+  );
+
+  // Keep Neon Auth session refresh / OAuth exchange, but allow guest access
+  // to the home page (and unauthorized) without forcing login.
+  if (
+    GUEST_ALLOWED_PATHS.has(request.nextUrl.pathname) &&
+    response.status >= 300 &&
+    response.status < 400
+  ) {
+    const location = response.headers.get("location") || "";
+    if (location.includes("/auth/sign-in")) {
+      return NextResponse.next();
+    }
+  }
+
+  return response;
 }
 
 export const config = {
