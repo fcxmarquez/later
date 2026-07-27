@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isAuthConfigured } from "@/lib/auth/config";
 import { getAuth } from "@/lib/auth/server";
 
 const GUEST_ALLOWED_PATHS = new Set(["/", "/auth/unauthorized"]);
 
 export default async function proxy(request: NextRequest) {
+  // Without Neon Auth env vars, skip middleware and let the app run as guest.
+  if (!isAuthConfigured()) {
+    return NextResponse.next();
+  }
+
   const response = await getAuth().middleware({ loginUrl: "/auth/sign-in" })(
     request,
   );
