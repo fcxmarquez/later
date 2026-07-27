@@ -1,11 +1,17 @@
 import "server-only";
 
-import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
+import { watchlistItems } from "@/db/schema";
+import { neon } from "@neondatabase/serverless";
+import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";
 
-let sql: NeonQueryFunction<false, false> | null = null;
+const schema = { watchlistItems };
 
-export function getSql() {
-  if (sql) return sql;
+export type Db = NeonHttpDatabase<typeof schema>;
+
+let db: Db | null = null;
+
+export function getDb() {
+  if (db) return db;
 
   const databaseUrl = process.env.DATABASE_URL;
 
@@ -13,6 +19,6 @@ export function getSql() {
     throw new Error("DATABASE_URL is not configured.");
   }
 
-  sql = neon(databaseUrl);
-  return sql;
+  db = drizzle(neon(databaseUrl), { schema });
+  return db;
 }
