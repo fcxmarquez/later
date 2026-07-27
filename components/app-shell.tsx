@@ -95,7 +95,6 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
       <button onClick={() => nav("home")} className="flex items-center gap-2 text-xl font-bold tracking-tight"><span className="grid size-9 place-items-center rounded-xl bg-white text-black"><Play size={17} fill="currentColor"/></span> later</button>
       <nav className="glass hidden items-center gap-1 rounded-full p-1 sm:flex">{[["home", "Inicio"], ["search", "Explorar"], ["list", "Mi lista"]].map(([key,label]) => <button key={key} onClick={() => nav(key as View)} className={`rounded-full px-5 py-2 text-sm transition ${view === key ? "bg-white text-black" : "text-zinc-300 hover:text-white"}`}>{label}</button>)}</nav>
       <div className="flex items-center gap-2">
-        <button onClick={() => nav("search")} className="grid size-10 place-items-center rounded-full bg-white/10 backdrop-blur hover:bg-white/20" aria-label="Buscar"><Search size={19}/></button>
         {isGuest ? (
           <div className="glass flex items-center gap-2 rounded-full p-1 pr-2">
             <span className="grid size-8 place-items-center rounded-full bg-white/15 text-sm font-bold text-white" title="Modo invitado">I</span>
