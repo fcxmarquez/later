@@ -2,14 +2,23 @@
 
 import { create } from "zustand";
 import type { MediaItem, SavedMedia } from "@/lib/types";
+import {
+  clearGuestWatchlist,
+  isSavedMedia,
+  loadGuestWatchlist,
+  saveGuestWatchlist,
+} from "@/lib/guest-storage";
+
+export type WatchlistMode = "guest" | "authenticated";
 
 type MediaIdentity = Pick<MediaItem, "id" | "mediaType">;
 
 type WatchlistStore = {
   items: SavedMedia[];
+  mode: WatchlistMode | null;
   initialized: boolean;
   error: string | null;
-  initialize: (items: SavedMedia[]) => void;
+  initialize: (items: SavedMedia[], mode: WatchlistMode) => void;
   clearError: () => void;
   add: (item: MediaItem) => Promise<boolean>;
   remove: (item: MediaIdentity) => Promise<boolean>;
@@ -42,12 +51,30 @@ async function requestWatchlist(
   return (await response.json()) as { item: SavedMedia };
 }
 
+function persistGuestItems(items: SavedMedia[]) {
+  saveGuestWatchlist(items);
+}
+
 export const useWatchlist = create<WatchlistStore>((set, get) => ({
   items: [],
+  mode: null,
   initialized: false,
   error: null,
-  initialize: (items) =>
-    set((state) => (state.initialized ? state : { items, initialized: true })),
+  initialize: (items, mode) => {
+    if (get().initialized) return;
+
+    if (mode === "guest") {
+      set({
+        items: loadGuestWatchlist(),
+        mode,
+        initialized: true,
+        error: null,
+      });
+      return;
+    }
+
+    set({ items, mode, initialized: true, error: null });
+  },
   clearError: () => set({ error: null }),
   add: async (item) => {
     if (get().items.some((saved) => isSameMedia(saved, item))) return true;
@@ -58,10 +85,13 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
       addedAt: Date.now(),
     };
 
-    set((state) => ({
-      items: [...state.items, optimisticItem],
-      error: null,
-    }));
+    const nextItems = [...get().items, optimisticItem];
+    set({ items: nextItems, error: null });
+
+    if (get().mode === "guest") {
+      persistGuestItems(nextItems);
+      return true;
+    }
 
     try {
       const result = await requestWatchlist("POST", item);
@@ -85,10 +115,13 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
     const removed = get().items.find((saved) => isSameMedia(saved, item));
     if (!removed) return true;
 
-    set((state) => ({
-      items: state.items.filter((saved) => !isSameMedia(saved, item)),
-      error: null,
-    }));
+    const nextItems = get().items.filter((saved) => !isSameMedia(saved, item));
+    set({ items: nextItems, error: null });
+
+    if (get().mode === "guest") {
+      persistGuestItems(nextItems);
+      return true;
+    }
 
     try {
       await requestWatchlist("DELETE", item);
@@ -108,12 +141,15 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
     if (!saved) return false;
 
     const watched = !saved.watched;
-    set((state) => ({
-      items: state.items.map((entry) =>
-        isSameMedia(entry, item) ? { ...entry, watched } : entry,
-      ),
-      error: null,
-    }));
+    const nextItems = get().items.map((entry) =>
+      isSameMedia(entry, item) ? { ...entry, watched } : entry,
+    );
+    set({ items: nextItems, error: null });
+
+    if (get().mode === "guest") {
+      persistGuestItems(nextItems);
+      return true;
+    }
 
     try {
       const result = await requestWatchlist("PATCH", { ...item, watched });
@@ -138,22 +174,4 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
   has: (item) => get().items.some((saved) => isSameMedia(saved, item)),
 }));
 
-export function isLegacySavedMedia(value: unknown): value is SavedMedia {
-  if (!value || typeof value !== "object") return false;
-  const item = value as Partial<SavedMedia>;
-
-  return (
-    Number.isInteger(item.id) &&
-    (item.mediaType === "movie" || item.mediaType === "tv") &&
-    typeof item.title === "string" &&
-    typeof item.overview === "string" &&
-    typeof item.posterPath === "string" &&
-    typeof item.backdropPath === "string" &&
-    typeof item.year === "string" &&
-    typeof item.rating === "number" &&
-    Array.isArray(item.genres) &&
-    item.genres.every((genre) => typeof genre === "string") &&
-    typeof item.watched === "boolean" &&
-    typeof item.addedAt === "number"
-  );
-}
+export { clearGuestWatchlist, isSavedMedia as isLegacySavedMedia };

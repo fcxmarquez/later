@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Play } from "lucide-react";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
-import { ALLOWED_EMAIL, isAllowedUser } from "@/lib/auth/config";
+import { isAllowedUser, isAuthConfigured } from "@/lib/auth/config";
 import { getAuth } from "@/lib/auth/server";
 
 export const dynamic = "force-dynamic";
@@ -11,12 +12,16 @@ export default async function SignInPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const { data: session } = await getAuth().getSession();
+  const authReady = isAuthConfigured();
 
-  if (session?.user) {
-    redirect(
-      isAllowedUser(session.user) ? "/" : "/auth/unauthorized",
-    );
+  if (authReady) {
+    const { data: session } = await getAuth().getSession();
+
+    if (session?.user) {
+      redirect(
+        isAllowedUser(session.user) ? "/" : "/auth/unauthorized",
+      );
+    }
   }
 
   const { error } = await searchParams;
@@ -37,11 +42,19 @@ export default async function SignInPage({
           Tu lista te espera.
         </h1>
         <p className="mx-auto mt-4 max-w-sm text-center text-sm leading-6 text-zinc-400">
-          Inicia sesión con la cuenta autorizada para entrar a tu watchlist.
+          {authReady
+            ? "Entra con Google para sincronizar en la nube, o continúa como invitado y guarda tu lista en este dispositivo."
+            : "El login con Google aún no está configurado en este entorno. Puedes continuar como invitado y guardar tu lista en este dispositivo."}
         </p>
 
-        <div className="mt-8">
-          <GoogleSignInButton />
+        <div className="mt-8 space-y-3">
+          {authReady ? <GoogleSignInButton /> : null}
+          <Link
+            href="/"
+            className="flex w-full items-center justify-center rounded-full bg-white/10 px-5 py-3.5 font-semibold text-white ring-1 ring-white/10 transition hover:bg-white/15"
+          >
+            Continuar como invitado
+          </Link>
         </div>
 
         {error && (
@@ -54,8 +67,7 @@ export default async function SignInPage({
         )}
 
         <p className="mt-6 text-center text-xs leading-5 text-zinc-600">
-          Acceso limitado a{" "}
-          <span className="text-zinc-400">{ALLOWED_EMAIL}</span>
+          La sincronización en la nube requiere una cuenta autorizada.
         </p>
       </section>
     </main>

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { LoaderCircle, LockKeyhole, RotateCcw } from "lucide-react";
-import { ALLOWED_EMAIL } from "@/lib/auth/config";
 import { getAuthClient } from "@/lib/auth/client";
 
 export function RestrictedAccess() {
@@ -27,8 +26,7 @@ export function RestrictedAccess() {
           Esta cuenta no tiene acceso.
         </h1>
         <p className="mt-4 text-sm leading-6 text-zinc-400">
-          Later está disponible únicamente para{" "}
-          <span className="text-zinc-200">{ALLOWED_EMAIL}</span>.
+          Later está disponible únicamente para la cuenta autorizada.
         </p>
         <button
           type="button"
@@ -42,6 +40,14 @@ export function RestrictedAccess() {
             <RotateCcw size={19} />
           )}
           {isSigningOut ? "Cerrando sesión…" : "Probar con otra cuenta"}
+        </button>
+        <button
+          type="button"
+          disabled={isSigningOut}
+          onClick={() => window.location.assign("/")}
+          className="mt-3 flex w-full items-center justify-center rounded-full bg-white/10 px-5 py-3.5 font-semibold text-white ring-1 ring-white/10 transition hover:bg-white/15 disabled:cursor-wait disabled:opacity-70"
+        >
+          Continuar como invitado
         </button>
       </section>
     </main>

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { LoaderCircle } from "lucide-react";
-import { ALLOWED_EMAIL } from "@/lib/auth/config";
 import { getAuthClient } from "@/lib/auth/client";
 
 export function GoogleSignInButton() {
@@ -20,7 +19,6 @@ export function GoogleSignInButton() {
         callbackURL: origin,
         newUserCallbackURL: origin,
         errorCallbackURL: `${origin}/auth/sign-in?error=oauth`,
-        loginHint: ALLOWED_EMAIL,
       });
 
       if (authError) {
