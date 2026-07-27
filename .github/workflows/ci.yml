@@ -37,9 +37,3 @@ jobs:
 
       - name: Build
         run: npm run build
-        env:
-          # Dummy values so Next can compile auth/db modules in CI.
-          # Real secrets are not required for a production build of this app.
-          NEON_AUTH_BASE_URL: https://example.neonauth.us-east-1.aws.neon.tech/neondb/auth
-          NEON_AUTH_COOKIE_SECRET: ci-placeholder-secret-at-least-32-chars
-          DATABASE_URL: postgresql://user:password@ep-example-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require
