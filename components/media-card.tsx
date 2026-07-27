@@ -46,7 +46,7 @@ export function MediaCard({
         >
           {saved ? <Check size={19} /> : <Plus size={20} />}
         </button>
-        <span className="absolute left-3 top-3 rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest backdrop-blur-md">
+        <span className="absolute top-3 left-3 rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-semibold tracking-widest uppercase backdrop-blur-md">
           {item.mediaType === "movie" ? "Película" : "Serie"}
         </span>
       </div>

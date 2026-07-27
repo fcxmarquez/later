@@ -73,7 +73,7 @@ export function DetailModal({
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
         onClick={(event) => event.stopPropagation()}
-        className="relative max-h-[94vh] w-full max-w-5xl overscroll-contain overflow-y-auto rounded-t-[30px] bg-[#111114] shadow-2xl sm:rounded-[30px]"
+        className="relative max-h-[94vh] w-full max-w-5xl overflow-y-auto overscroll-contain rounded-t-[30px] bg-[#111114] shadow-2xl sm:rounded-[30px]"
       >
         <div className="relative h-[40vh] min-h-[320px]">
           <Image
@@ -90,13 +90,13 @@ export function DetailModal({
           ref={closeButtonRef}
           type="button"
           onClick={close}
-          className="glass absolute right-5 top-5 grid size-11 place-items-center rounded-full transition hover:bg-white hover:text-black"
+          className="glass absolute top-5 right-5 grid size-11 place-items-center rounded-full transition hover:bg-white hover:text-black"
           aria-label="Cerrar"
         >
           <X />
         </button>
         <div className="relative -mt-24 px-6 pb-9 sm:px-10">
-          <span className="text-xs font-bold uppercase tracking-[.25em] text-blue-400">
+          <span className="text-xs font-bold tracking-[.25em] text-blue-400 uppercase">
             {item.mediaType === "movie" ? "Película" : "Serie"}
           </span>
           <h2

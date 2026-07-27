@@ -233,7 +233,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
             <div className="absolute inset-0 bg-gradient-to-r from-black via-black/30 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#050507] via-transparent to-black/20" />
             <div className="relative max-w-2xl">
-              <p className="mb-4 text-xs font-bold uppercase tracking-[.32em] text-blue-300">
+              <p className="mb-4 text-xs font-bold tracking-[.32em] text-blue-300 uppercase">
                 Una selección para ti
               </p>
               <h1 className="text-5xl font-bold tracking-[-.05em] sm:text-7xl lg:text-8xl">
@@ -278,7 +278,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
 
       {view === "search" && (
         <section className="px-5 pt-32 sm:px-10 lg:px-14">
-          <p className="text-xs font-bold uppercase tracking-[.3em] text-blue-400">
+          <p className="text-xs font-bold tracking-[.3em] text-blue-400 uppercase">
             Explora
           </p>
           <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-6xl">
@@ -348,7 +348,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
 
       {view === "list" && (
         <section className="px-5 pt-32 sm:px-10 lg:px-14">
-          <p className="text-xs font-bold uppercase tracking-[.3em] text-blue-400">
+          <p className="text-xs font-bold tracking-[.3em] text-blue-400 uppercase">
             Tu espacio
           </p>
           <div className="mt-3 flex flex-wrap items-end justify-between gap-6">

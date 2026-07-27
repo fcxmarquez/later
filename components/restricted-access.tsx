@@ -19,7 +19,7 @@ export function RestrictedAccess() {
         <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-amber-300/10 text-amber-200 ring-1 ring-amber-300/20">
           <LockKeyhole size={25} />
         </span>
-        <p className="mt-7 text-xs font-bold uppercase tracking-[.3em] text-amber-200">
+        <p className="mt-7 text-xs font-bold tracking-[.3em] text-amber-200 uppercase">
           Acceso restringido
         </p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight">
