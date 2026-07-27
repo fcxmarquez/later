@@ -164,7 +164,9 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
     } catch {
       set((state) => ({
         items: state.items.map((entry) =>
-          isSameMedia(entry, item) ? { ...entry, watched: saved.watched } : entry,
+          isSameMedia(entry, item)
+            ? { ...entry, watched: saved.watched }
+            : entry,
         ),
         error: "No pudimos cambiar el estado. Inténtalo de nuevo.",
       }));

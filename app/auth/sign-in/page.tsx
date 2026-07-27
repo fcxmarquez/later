@@ -18,9 +18,7 @@ export default async function SignInPage({
     const { data: session } = await getAuth().getSession();
 
     if (session?.user) {
-      redirect(
-        isAllowedUser(session.user) ? "/" : "/auth/unauthorized",
-      );
+      redirect(isAllowedUser(session.user) ? "/" : "/auth/unauthorized");
     }
   }
 

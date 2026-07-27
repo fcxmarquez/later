@@ -17,11 +17,18 @@ async function getAuthorizedUserId() {
   const { data: session } = await getAuth().getSession();
 
   if (!session?.user) {
-    return { response: NextResponse.json({ error: "No autenticado" }, { status: 401 }) };
+    return {
+      response: NextResponse.json({ error: "No autenticado" }, { status: 401 }),
+    };
   }
 
   if (!isAllowedUser(session.user)) {
-    return { response: NextResponse.json({ error: "Acceso denegado" }, { status: 403 }) };
+    return {
+      response: NextResponse.json(
+        { error: "Acceso denegado" },
+        { status: 403 },
+      ),
+    };
   }
 
   return { userId: session.user.id };
@@ -98,7 +105,10 @@ export async function PATCH(request: Request) {
   );
 
   if (!item) {
-    return NextResponse.json({ error: "Título no encontrado" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Título no encontrado" },
+      { status: 404 },
+    );
   }
 
   return NextResponse.json({ item });
@@ -113,11 +123,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Título no válido" }, { status: 400 });
   }
 
-  await deleteWatchlistItem(
-    auth.userId,
-    body.id,
-    body.mediaType,
-  );
+  await deleteWatchlistItem(auth.userId, body.id, body.mediaType);
 
   return new Response(null, { status: 204 });
 }
