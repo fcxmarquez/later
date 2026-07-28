@@ -127,7 +127,7 @@ try {
     console.error("Drizzle schema and committed migrations are out of sync.");
     console.error(changes.join("\n"));
     console.error(
-      "Run `npm run db:generate`, review the SQL, and commit the generated migration artifacts.",
+      "Run `pnpm run db:generate`, review the SQL, and commit the generated migration artifacts.",
     );
     process.exitCode = 1;
   } else {
