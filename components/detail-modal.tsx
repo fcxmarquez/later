@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useId, useRef, useState, type SyntheticEvent } from "react";
-import { Check, Eye, Plus, X } from "lucide-react";
+import { Check, ChevronDown, Eye, Plus, X } from "lucide-react";
 import { imageUrl } from "@/lib/catalog";
 import type {
   CastMember,
@@ -174,7 +174,7 @@ function ExpandableOverview({ text, id }: { text: string; id: string }) {
   return (
     <div className="mt-4 max-w-3xl">
       <div
-        className={`detail-overview relative ${expanded ? "is-expanded" : "is-collapsed"} ${canExpand ? "cursor-pointer" : ""}`}
+        className={`detail-overview relative ${expanded ? "is-expanded" : "is-collapsed"} ${canExpand ? "cursor-pointer pb-8" : ""}`}
         onClick={toggle}
         onKeyDown={(event) => {
           if (!canExpand) return;
@@ -187,6 +187,9 @@ function ExpandableOverview({ text, id }: { text: string; id: string }) {
         tabIndex={canExpand ? 0 : undefined}
         aria-expanded={canExpand ? expanded : undefined}
         aria-controls={canExpand ? id : undefined}
+        aria-label={
+          canExpand ? (expanded ? "Ver menos" : "Ver más") : undefined
+        }
       >
         <p
           ref={contentRef}
@@ -207,17 +210,24 @@ function ExpandableOverview({ text, id }: { text: string; id: string }) {
           {text}
         </p>
         {canExpand && (
-          <span
-            className={`detail-overview-fade pointer-events-none absolute inset-x-0 bottom-0 h-16 transition-opacity duration-300 ${expanded ? "opacity-0" : "opacity-100"}`}
-            aria-hidden
-          />
+          <>
+            <span
+              className={`detail-overview-fade pointer-events-none absolute inset-x-0 bottom-0 h-20 transition-opacity duration-300 ${expanded ? "opacity-0" : "opacity-100"}`}
+              aria-hidden
+            />
+            <span
+              className="pointer-events-none absolute inset-x-0 bottom-1 flex justify-center"
+              aria-hidden
+            >
+              <ChevronDown
+                size={22}
+                strokeWidth={2}
+                className={`text-zinc-200 drop-shadow-[0_1px_8px_rgba(0,0,0,.65)] transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
+              />
+            </span>
+          </>
         )}
       </div>
-      {canExpand && (
-        <p className="mt-2 text-sm font-medium text-zinc-100">
-          {expanded ? "Ver menos" : "Ver más"}
-        </p>
-      )}
     </div>
   );
 }
