@@ -33,10 +33,12 @@ sincronización entre `db/schema.ts` y los artefactos generados, y build en cada
 pull request y push a `main`. El check de drift ejecuta Drizzle sobre una copia
 temporal del historial y falla si `npm run db:generate` produciría cambios. En
 pull requests también rechaza cambios, renombres o eliminaciones de SQL de
-migraciones existentes: las correcciones deben ir en una migración nueva. Un
-segundo job levanta un Postgres 16 desechable, aplica todo el historial dos
-veces y comprueba el ledger, la llave foránea y el borrado en cascada (workflow
-`.github/workflows/ci.yml`, checks `CI / ci` y `CI / migrations`).
+migraciones o snapshots existentes y solo permite añadir entradas al journal:
+las correcciones deben ir en una migración nueva. Un segundo job levanta un
+Postgres 16 desechable, aplica todo el historial dos veces y comprueba los
+hashes del ledger, la llave foránea, el CRUD real de la watchlist y el borrado
+en cascada (workflow `.github/workflows/ci.yml`, checks `CI / ci` y
+`CI / migrations`).
 
 Para bloquear merges a `main` hasta que pase el check (requiere admin del repo; en repos privados personales también GitHub Pro):
 
