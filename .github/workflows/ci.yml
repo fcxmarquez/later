@@ -43,6 +43,9 @@ jobs:
       - name: Check migration consistency
         run: npm run db:check
 
+      - name: Check schema migration drift
+        run: npm run db:check:drift
+
       - name: Check migration immutability
         if: github.event_name == 'pull_request'
         env:

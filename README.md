@@ -18,7 +18,8 @@ El esquema Postgres se define con Drizzle en `db/schema.ts`. Tras cambiar el sch
 
 1. Genera una migración con `npm run db:generate`.
 2. Revisa el SQL generado y no edites migraciones que ya se aplicaron.
-3. Valida el historial con `npm run db:check`.
+3. Valida el historial con `npm run db:check` y confirma que el schema esté
+   sincronizado con `npm run db:check:drift`.
 4. Aplica las migraciones pendientes en desarrollo con `npm run db:migrate`.
 
 Las migraciones no se generan al iniciar la app ni al ejecutar `npm run build`; solo se aplican archivos SQL ya versionados. Vercel ejecuta `npm run db:migrate:vercel` como paso explícito antes del build. En producción exige una conexión directa mediante `DATABASE_URL_UNPOOLED`; en Preview migra la base aislada cuando la integración de Neon proporciona sus variables, o conserva el modo invitado si no hay base configurada. El runner serializa despliegues concurrentes con un advisory lock de Postgres y Drizzle aplica cada lote pendiente dentro de una transacción.
@@ -27,7 +28,15 @@ Las migraciones no se generan al iniciar la app ni al ejecutar `npm run build`; 
 
 ## CI
 
-GitHub Actions ejecuta formato, lint, typecheck, consistencia de migraciones y build en cada pull request y push a `main`. En pull requests también rechaza cambios, renombres o eliminaciones de SQL de migraciones existentes: las correcciones deben ir en una migración nueva. Un segundo job levanta un Postgres 16 desechable, aplica todo el historial dos veces y comprueba el ledger, la llave foránea y el borrado en cascada (workflow `.github/workflows/ci.yml`, checks `CI / ci` y `CI / migrations`).
+GitHub Actions ejecuta formato, lint, typecheck, consistencia de migraciones,
+sincronización entre `db/schema.ts` y los artefactos generados, y build en cada
+pull request y push a `main`. El check de drift ejecuta Drizzle sobre una copia
+temporal del historial y falla si `npm run db:generate` produciría cambios. En
+pull requests también rechaza cambios, renombres o eliminaciones de SQL de
+migraciones existentes: las correcciones deben ir en una migración nueva. Un
+segundo job levanta un Postgres 16 desechable, aplica todo el historial dos
+veces y comprueba el ledger, la llave foránea y el borrado en cascada (workflow
+`.github/workflows/ci.yml`, checks `CI / ci` y `CI / migrations`).
 
 Para bloquear merges a `main` hasta que pase el check (requiere admin del repo; en repos privados personales también GitHub Pro):
 

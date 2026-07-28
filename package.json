@@ -15,6 +15,7 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "db:check": "drizzle-kit check",
+    "db:check:drift": "node scripts/check-schema-migration-drift.mjs",
     "db:check:immutable": "node scripts/check-migration-immutability.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/db-migrate.ts",
