@@ -2,16 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useId, useRef, useState, type SyntheticEvent } from "react";
-import {
-  Check,
-  Clock3,
-  Eye,
-  LoaderCircle,
-  Plus,
-  Star,
-  Tv,
-  X,
-} from "lucide-react";
+import { Check, Eye, Plus, X } from "lucide-react";
 import { imageUrl } from "@/lib/catalog";
 import type {
   CastMember,
@@ -20,6 +11,8 @@ import type {
   WatchProvider,
 } from "@/lib/types";
 import { useWatchlist } from "@/store/watchlist";
+
+const OVERVIEW_COLLAPSED_LINES = 3;
 
 function formatRuntime(minutes?: number | null) {
   if (!minutes) return null;
@@ -119,6 +112,95 @@ function CastCard({ member }: { member: CastMember }) {
   );
 }
 
+function ExpandableOverview({ text, id }: { text: string; id: string }) {
+  const contentRef = useRef<HTMLParagraphElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [canExpand, setCanExpand] = useState(false);
+
+  useEffect(() => {
+    const node = contentRef.current;
+    if (!node) return;
+
+    const measure = () => {
+      const style = getComputedStyle(node);
+      const lineHeight = Number.parseFloat(style.lineHeight);
+      const maxCollapsed = Number.isFinite(lineHeight)
+        ? lineHeight * OVERVIEW_COLLAPSED_LINES
+        : 96;
+      setCanExpand(node.scrollHeight > maxCollapsed + 2);
+    };
+
+    const frame = requestAnimationFrame(measure);
+    const observer = new ResizeObserver(() => {
+      requestAnimationFrame(measure);
+    });
+    observer.observe(node);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [text]);
+
+  const collapsed = canExpand && !expanded;
+
+  return (
+    <div className="mt-4 max-w-3xl">
+      <div
+        className={`detail-overview relative ${collapsed ? "is-collapsed" : "is-expanded"} ${canExpand ? "cursor-pointer" : ""}`}
+        onClick={() => {
+          if (canExpand) setExpanded((value) => !value);
+        }}
+        onKeyDown={(event) => {
+          if (!canExpand) return;
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setExpanded((value) => !value);
+          }
+        }}
+        role={canExpand ? "button" : undefined}
+        tabIndex={canExpand ? 0 : undefined}
+        aria-expanded={canExpand ? expanded : undefined}
+        aria-controls={canExpand ? id : undefined}
+      >
+        <p
+          ref={contentRef}
+          id={id}
+          className="detail-overview-text text-base leading-8 text-zinc-300 sm:text-lg"
+        >
+          {text}
+        </p>
+        {collapsed && (
+          <span
+            className="detail-overview-fade pointer-events-none absolute inset-x-0 bottom-0 h-16"
+            aria-hidden
+          />
+        )}
+      </div>
+      {canExpand && (
+        <p className="mt-2 text-sm font-medium text-zinc-100">
+          {expanded ? "Ver menos" : "Ver más"}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function HeroBackdrop({ src }: { src: string }) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <Image
+      src={src}
+      alt=""
+      fill
+      sizes="100vw"
+      priority
+      onLoad={() => setLoaded(true)}
+      className={`detail-hero-image object-cover object-center transition-opacity duration-700 ease-out ${loaded ? "is-loaded opacity-100" : "opacity-0"}`}
+    />
+  );
+}
+
 export function DetailModal({
   item,
   close,
@@ -139,7 +221,6 @@ export function DetailModal({
   const phaseRef = useRef<"enter" | "shown" | "exit">("enter");
   const [phase, setPhase] = useState<"enter" | "shown" | "exit">("enter");
   const [detail, setDetail] = useState<MediaDetail | null>(null);
-  const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
   const view = mergeDetail(item, detail);
@@ -175,13 +256,11 @@ export function DetailModal({
         if (!data.detail) throw new Error("missing detail");
         if (!controller.signal.aborted) {
           setDetail(data.detail);
-          setLoading(false);
         }
       })
       .catch((error: Error) => {
         if (error.name === "AbortError") return;
         setLoadError(true);
-        setLoading(false);
       });
     return () => controller.abort();
   }, [item.id, item.mediaType]);
@@ -233,6 +312,7 @@ export function DetailModal({
     runtimeLabel,
     view.mediaType === "tv" && view.seasons ? `${view.seasons} temp.` : null,
     view.rating > 0 ? `★ ${view.rating.toFixed(1)}` : null,
+    ...view.genres,
   ].filter(Boolean);
 
   return (
@@ -251,19 +331,13 @@ export function DetailModal({
         onAnimationEnd={onPanelAnimationEnd}
         className="detail-panel absolute inset-0 overflow-y-auto overscroll-contain bg-[#07070a]"
       >
-        <div className="relative min-h-[72vh] sm:min-h-[78vh]">
+        <div className="relative min-h-[72vh] bg-black sm:min-h-[78vh]">
           {view.backdropPath ? (
-            <Image
+            <HeroBackdrop
+              key={view.backdropPath}
               src={imageUrl(view.backdropPath, "backdrop")}
-              alt=""
-              fill
-              sizes="100vw"
-              priority
-              className="detail-hero-image object-cover object-center"
             />
-          ) : (
-            <div className="absolute inset-0 bg-zinc-900" />
-          )}
+          ) : null}
           <div className="absolute inset-0 bg-gradient-to-t from-[#07070a] via-[#07070a]/45 to-black/30" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#07070a]/90 via-[#07070a]/35 to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#07070a] to-transparent" />
@@ -280,17 +354,9 @@ export function DetailModal({
 
           <div className="relative flex min-h-[72vh] flex-col justify-end px-5 pb-10 sm:min-h-[78vh] sm:px-10 sm:pb-14 lg:px-16">
             <div className="detail-hero-copy max-w-3xl">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold tracking-[0.22em] text-zinc-200 uppercase backdrop-blur-md">
-                  {view.mediaType === "movie" ? "Película" : "Serie"}
-                </span>
-                {loading && (
-                  <span className="inline-flex items-center gap-2 text-xs text-zinc-400">
-                    <LoaderCircle className="animate-spin" size={14} />
-                    Cargando ficha…
-                  </span>
-                )}
-              </div>
+              <span className="text-[11px] font-semibold tracking-[0.22em] text-zinc-300 uppercase">
+                {view.mediaType === "movie" ? "Película" : "Serie"}
+              </span>
 
               <h2
                 id={titleId}
@@ -305,33 +371,10 @@ export function DetailModal({
                 </p>
               )}
 
-              <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-zinc-300">
-                {metaBits.map((bit, index) => (
-                  <span
-                    key={`${bit}-${index}`}
-                    className="inline-flex items-center gap-3"
-                  >
-                    {index > 0 && (
-                      <span className="text-zinc-600" aria-hidden>
-                        ·
-                      </span>
-                    )}
-                    {bit}
-                  </span>
-                ))}
-              </div>
-
-              {view.genres.length > 0 && (
-                <ul className="mt-4 flex flex-wrap gap-2">
-                  {view.genres.map((genre) => (
-                    <li
-                      key={genre}
-                      className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-zinc-200"
-                    >
-                      {genre}
-                    </li>
-                  ))}
-                </ul>
+              {metaBits.length > 0 && (
+                <p className="mt-5 text-sm text-zinc-300 sm:text-[15px]">
+                  {metaBits.join(" · ")}
+                </p>
               )}
 
               <div className="mt-7 flex flex-wrap gap-3">
@@ -368,68 +411,23 @@ export function DetailModal({
         </div>
 
         <div className="relative z-10 space-y-12 px-5 pb-20 sm:px-10 lg:px-16">
-          <section className="detail-stagger grid gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(240px,0.7fr)] lg:gap-14">
-            <div>
-              <h3 className="text-xs font-bold tracking-[0.28em] text-zinc-500 uppercase">
-                Sinopsis
-              </h3>
-              <p
-                id={descriptionId}
-                className="mt-4 max-w-3xl text-base leading-8 text-zinc-300 sm:text-lg"
-              >
-                {view.overview}
+          <section className="detail-stagger max-w-3xl">
+            <h3 className="text-xs font-bold tracking-[0.28em] text-zinc-500 uppercase">
+              Sinopsis
+            </h3>
+            <ExpandableOverview
+              key={view.overview}
+              text={view.overview}
+              id={descriptionId}
+            />
+            {creditLine && (
+              <p className="mt-5 text-sm text-zinc-500">{creditLine}</p>
+            )}
+            {loadError && (
+              <p className="mt-4 text-sm text-amber-300/90">
+                No pudimos enriquecer la ficha. Mostramos la información básica.
               </p>
-              {creditLine && (
-                <p className="mt-5 text-sm text-zinc-500">{creditLine}</p>
-              )}
-              {loadError && (
-                <p className="mt-4 text-sm text-amber-300/90">
-                  No pudimos enriquecer la ficha. Mostramos la información
-                  básica.
-                </p>
-              )}
-            </div>
-
-            <aside className="space-y-4 rounded-[28px] border border-white/10 bg-white/[0.03] p-5 sm:p-6">
-              <h3 className="text-xs font-bold tracking-[0.28em] text-zinc-500 uppercase">
-                Detalles
-              </h3>
-              <dl className="space-y-4 text-sm">
-                <div className="flex items-start gap-3">
-                  <Star className="mt-0.5 size-4 text-zinc-500" />
-                  <div>
-                    <dt className="text-zinc-500">Valoración</dt>
-                    <dd className="mt-1 text-zinc-100">
-                      {view.rating > 0
-                        ? `${view.rating.toFixed(1)} / 10`
-                        : "Sin datos"}
-                    </dd>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Clock3 className="mt-0.5 size-4 text-zinc-500" />
-                  <div>
-                    <dt className="text-zinc-500">
-                      {view.mediaType === "tv" ? "Duración media" : "Duración"}
-                    </dt>
-                    <dd className="mt-1 text-zinc-100">
-                      {runtimeLabel || "Sin datos"}
-                    </dd>
-                  </div>
-                </div>
-                {view.mediaType === "tv" && (
-                  <div className="flex items-start gap-3">
-                    <Tv className="mt-0.5 size-4 text-zinc-500" />
-                    <div>
-                      <dt className="text-zinc-500">Temporadas</dt>
-                      <dd className="mt-1 text-zinc-100">
-                        {view.seasons || "Sin datos"}
-                      </dd>
-                    </div>
-                  </div>
-                )}
-              </dl>
-            </aside>
+            )}
           </section>
 
           {view.providers.length > 0 && (

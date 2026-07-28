@@ -68,11 +68,40 @@ input {
   animation: detail-panel-out 280ms ease-in forwards;
 }
 .detail-hero-image {
-  transform: scale(1.06);
-  transition: transform 900ms var(--detail-ease);
+  transform: scale(1.04);
+  transition:
+    opacity 700ms ease-out,
+    transform 900ms var(--detail-ease);
 }
-.detail-overlay.is-shown .detail-hero-image {
+.detail-overlay.is-shown .detail-hero-image.is-loaded {
   transform: scale(1);
+}
+.detail-overview {
+  display: block;
+}
+.detail-overview-text {
+  margin: 0;
+  overflow: hidden;
+  transition: max-height 420ms var(--detail-ease);
+}
+.detail-overview.is-collapsed .detail-overview-text {
+  max-height: 6rem;
+}
+@media (min-width: 640px) {
+  .detail-overview.is-collapsed .detail-overview-text {
+    max-height: 6.75rem;
+  }
+}
+.detail-overview.is-expanded .detail-overview-text {
+  max-height: 48rem;
+}
+.detail-overview-fade {
+  background: linear-gradient(
+    to top,
+    #07070a 8%,
+    rgba(7, 7, 10, 0.72) 45%,
+    transparent 100%
+  );
 }
 .detail-hero-copy,
 .detail-stagger {
@@ -138,10 +167,15 @@ input {
   .detail-panel,
   .detail-hero-image,
   .detail-hero-copy,
-  .detail-stagger {
+  .detail-stagger,
+  .detail-overview-text {
     animation: none !important;
     transition: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+  .detail-overview.is-collapsed .detail-overview-text,
+  .detail-overview.is-expanded .detail-overview-text {
+    max-height: none;
   }
 }
