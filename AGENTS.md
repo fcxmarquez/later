@@ -2,18 +2,18 @@
 
 ## Instructions
 
-`later-watchlist` is a single Next.js 16 (App Router) app — a Spanish-language movie/TV watchlist called "Later". There is only one service to run locally: the Next.js server. Node 22 and npm are the toolchain (see `.github/workflows/ci.yml`).
+`later-watchlist` is a single Next.js 16 (App Router) app — a Spanish-language movie/TV watchlist called "Later". There is only one service to run locally: the Next.js server. Node 22 and pnpm 10.34.5 are the toolchain (see `.github/workflows/ci.yml`).
 
-Standard commands live in `package.json` scripts: `npm run dev` (http://localhost:3000), `npm run format` / `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run build`. There is no test runner; CI is lint + typecheck + build only. The dev server uses Turbopack.
+Standard commands live in `package.json` scripts: `pnpm run dev` (http://localhost:3000), `pnpm run format` / `pnpm run format:check`, `pnpm run lint`, `pnpm run typecheck`, `pnpm run build`. There is no app unit-test runner; CI runs formatting, lint, typecheck, migration validation and smoke testing, and the production build. The dev server uses Turbopack.
 
 ### Before committing or pushing
 
 Run these in order and fix any failures before you commit or push:
 
-1. `npm run format` (or `npm run format:check` to verify without writing)
-2. `npm run lint`
-3. `npm run typecheck`
-4. `npm run build`
+1. `pnpm run format` (or `pnpm run format:check` to verify without writing)
+2. `pnpm run lint`
+3. `pnpm run typecheck`
+4. `pnpm run build`
 
 ### Guest mode vs. auth mode (non-obvious)
 

@@ -1,0 +1,6 @@
+allowBuilds:
+  core-js: false
+  esbuild: true
+  fsevents: true
+  sharp: true
+  unrs-resolver: true
