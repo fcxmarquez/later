@@ -27,19 +27,24 @@ Use the following copy-ready pragmatic PRD structure, which contains only the co
 
 ```markdown
 ## Problem
+
 Describe the user problem, pain point, or job to be done. Explain why it matters and who is affected. For bugs, briefly state the current behavior and its impact.
 
 ## Desired Outcome
+
 Describe the user or business result this issue should produce. Focus on the outcome, not implementation activity.
 
 ## Proposed Solution
+
 Describe what should change at a product or behavior level. Keep the solution proportional to the issue and avoid prescribing implementation details unless the user requested a technical specification.
 
 ## Scope
+
 - List the behavior and scenarios this issue covers.
 - If a closely related concern could cause scope creep, state that it is out of scope.
 
 ## Acceptance Criteria
+
 - Given [context], when [action], then [observable outcome].
 - Use a concise checklist instead when Given/When/Then would be artificial.
 ```

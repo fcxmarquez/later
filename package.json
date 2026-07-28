@@ -2,6 +2,10 @@
   "name": "later-watchlist",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x",
+    "npm": "10.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,13 +13,24 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:check": "drizzle-kit check",
+    "db:check:drift": "node scripts/check-schema-migration-drift.mjs",
+    "db:check:immutable": "node scripts/check-migration-immutability.mjs",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/db-migrate.ts",
+    "db:migrate:production": "tsx scripts/db-migrate.ts --production",
+    "db:migrate:test": "tsx scripts/db-migration-smoke-test.ts",
+    "db:migrate:vercel": "tsx scripts/db-migrate.ts --vercel"
   },
   "dependencies": {
     "@neondatabase/auth": "^0.4.2-beta",
     "@neondatabase/serverless": "^1.1.0",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
     "lucide-react": "latest",
     "next": "latest",
+    "pg": "^8.22.0",
     "react": "latest",
     "react-dom": "latest",
     "zustand": "latest"
@@ -24,14 +39,17 @@
     "@eslint/eslintrc": "latest",
     "@tailwindcss/postcss": "latest",
     "@types/node": "latest",
+    "@types/pg": "^8.20.0",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "drizzle-kit": "^0.31.10",
     "eslint": "latest",
     "eslint-config-next": "latest",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "latest",
+    "tsx": "^4.23.1",
     "typescript": "latest"
   }
 }
