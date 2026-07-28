@@ -114,8 +114,10 @@ function CastCard({ member }: { member: CastMember }) {
 
 function ExpandableOverview({ text, id }: { text: string; id: string }) {
   const contentRef = useRef<HTMLParagraphElement>(null);
+  const collapsedHeightRef = useRef(96);
   const [expanded, setExpanded] = useState(false);
   const [canExpand, setCanExpand] = useState(false);
+  const [height, setHeight] = useState<number | "auto">("auto");
 
   useEffect(() => {
     const node = contentRef.current;
@@ -124,10 +126,17 @@ function ExpandableOverview({ text, id }: { text: string; id: string }) {
     const measure = () => {
       const style = getComputedStyle(node);
       const lineHeight = Number.parseFloat(style.lineHeight);
-      const maxCollapsed = Number.isFinite(lineHeight)
+      const collapsedHeight = Number.isFinite(lineHeight)
         ? lineHeight * OVERVIEW_COLLAPSED_LINES
         : 96;
-      setCanExpand(node.scrollHeight > maxCollapsed + 2);
+      collapsedHeightRef.current = collapsedHeight;
+
+      const fullHeight = node.scrollHeight;
+      const needsCollapse = fullHeight > collapsedHeight + 2;
+      setCanExpand(needsCollapse);
+      if (!expanded) {
+        setHeight(needsCollapse ? collapsedHeight : "auto");
+      }
     };
 
     const frame = requestAnimationFrame(measure);
@@ -139,22 +148,39 @@ function ExpandableOverview({ text, id }: { text: string; id: string }) {
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, [text]);
+  }, [text, expanded]);
 
-  const collapsed = canExpand && !expanded;
+  const toggle = () => {
+    const node = contentRef.current;
+    if (!node || !canExpand) return;
+
+    if (expanded) {
+      const fullHeight = node.scrollHeight;
+      setHeight(fullHeight);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setHeight(collapsedHeightRef.current);
+          setExpanded(false);
+        });
+      });
+      return;
+    }
+
+    const fullHeight = node.scrollHeight;
+    setExpanded(true);
+    setHeight(fullHeight);
+  };
 
   return (
     <div className="mt-4 max-w-3xl">
       <div
-        className={`detail-overview relative ${collapsed ? "is-collapsed" : "is-expanded"} ${canExpand ? "cursor-pointer" : ""}`}
-        onClick={() => {
-          if (canExpand) setExpanded((value) => !value);
-        }}
+        className={`detail-overview relative ${expanded ? "is-expanded" : "is-collapsed"} ${canExpand ? "cursor-pointer" : ""}`}
+        onClick={toggle}
         onKeyDown={(event) => {
           if (!canExpand) return;
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            setExpanded((value) => !value);
+            toggle();
           }
         }}
         role={canExpand ? "button" : undefined}
@@ -166,12 +192,23 @@ function ExpandableOverview({ text, id }: { text: string; id: string }) {
           ref={contentRef}
           id={id}
           className="detail-overview-text text-base leading-8 text-zinc-300 sm:text-lg"
+          style={{
+            height: typeof height === "number" ? `${height}px` : height,
+          }}
+          onTransitionEnd={(event) => {
+            if (
+              event.propertyName !== "height" ||
+              event.target !== event.currentTarget
+            )
+              return;
+            if (expanded) setHeight("auto");
+          }}
         >
           {text}
         </p>
-        {collapsed && (
+        {canExpand && (
           <span
-            className="detail-overview-fade pointer-events-none absolute inset-x-0 bottom-0 h-16"
+            className={`detail-overview-fade pointer-events-none absolute inset-x-0 bottom-0 h-16 transition-opacity duration-300 ${expanded ? "opacity-0" : "opacity-100"}`}
             aria-hidden
           />
         )}
@@ -312,7 +349,6 @@ export function DetailModal({
     runtimeLabel,
     view.mediaType === "tv" && view.seasons ? `${view.seasons} temp.` : null,
     view.rating > 0 ? `★ ${view.rating.toFixed(1)}` : null,
-    ...view.genres,
   ].filter(Boolean);
 
   return (
@@ -374,6 +410,11 @@ export function DetailModal({
               {metaBits.length > 0 && (
                 <p className="mt-5 text-sm text-zinc-300 sm:text-[15px]">
                   {metaBits.join(" · ")}
+                </p>
+              )}
+              {view.genres.length > 0 && (
+                <p className="mt-2 text-sm text-zinc-400 sm:text-[15px]">
+                  {view.genres.join(" · ")}
                 </p>
               )}
 

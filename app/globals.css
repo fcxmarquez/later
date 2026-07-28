@@ -82,18 +82,7 @@ input {
 .detail-overview-text {
   margin: 0;
   overflow: hidden;
-  transition: max-height 420ms var(--detail-ease);
-}
-.detail-overview.is-collapsed .detail-overview-text {
-  max-height: 6rem;
-}
-@media (min-width: 640px) {
-  .detail-overview.is-collapsed .detail-overview-text {
-    max-height: 6.75rem;
-  }
-}
-.detail-overview.is-expanded .detail-overview-text {
-  max-height: 48rem;
+  transition: height 420ms var(--detail-ease);
 }
 .detail-overview-fade {
   background: linear-gradient(
@@ -173,9 +162,5 @@ input {
     transition: none !important;
     opacity: 1 !important;
     transform: none !important;
-  }
-  .detail-overview.is-collapsed .detail-overview-text,
-  .detail-overview.is-expanded .detail-overview-text {
-    max-height: none;
   }
 }
