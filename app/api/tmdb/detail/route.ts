@@ -65,7 +65,7 @@ function isMediaType(value: string | null): value is MediaType {
 
 function mapProviders(detail: TmdbDetailResponse): WatchProvider[] {
   const region =
-    detail["watch/providers"]?.results?.ES ||
+    detail["watch/providers"]?.results?.MX ||
     detail["watch/providers"]?.results?.US ||
     {};
   const buckets = [
