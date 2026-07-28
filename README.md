@@ -14,18 +14,27 @@ Configura `DATABASE_URL` con la conexión agrupada (`pooler`) de Neon, `DATABASE
 
 Puedes usar la app como invitado sin iniciar sesión: en ese modo la watchlist se guarda en LocalStorage del navegador. La sincronización en la nube (Neon Auth + Postgres) está limitada a la cuenta configurada de forma privada en el servidor. Los usuarios y las sesiones se almacenan en el esquema administrado `neon_auth`; la lista autenticada y el estado visto/pendiente viven en `public.watchlist_items`, relacionados por el ID del usuario. El cliente conserva actualizaciones optimistas y, al iniciar sesión, migra una sola vez los datos de LocalStorage a Postgres.
 
-El esquema Postgres se define con Drizzle en `db/schema.ts`. Tras cambiar el schema, genera migraciones con `npm run db:generate` y aplícalas en local con `npm run db:migrate`. En producción, `npm run build` ejecuta las migraciones pendientes automáticamente antes del build de Next.js (solo cuando `VERCEL_ENV=production`).
+El esquema Postgres se define con Drizzle en `db/schema.ts`. Tras cambiar el schema:
+
+1. Genera una migración con `npm run db:generate`.
+2. Revisa el SQL generado y no edites migraciones que ya se aplicaron.
+3. Valida el historial con `npm run db:check`.
+4. Aplica las migraciones pendientes en desarrollo con `npm run db:migrate`.
+
+Las migraciones no se generan al iniciar la app ni al ejecutar `npm run build`; solo se aplican archivos SQL ya versionados. Vercel ejecuta `npm run db:migrate:vercel` como paso explícito antes del build. En producción exige una conexión directa mediante `DATABASE_URL_UNPOOLED`; en Preview migra la base aislada cuando la integración de Neon proporciona sus variables, o conserva el modo invitado si no hay base configurada. El runner serializa despliegues concurrentes con un advisory lock de Postgres y Drizzle aplica cada lote pendiente dentro de una transacción.
+
+`db/migrations/001_create_watchlist_items.sql` se conserva sin cambios como historial del flujo manual anterior. Drizzle solo ejecuta las migraciones registradas en `db/migrations/meta/_journal.json`.
 
 ## CI
 
-GitHub Actions ejecuta `lint`, `typecheck` y `build` en cada pull request y en pushes a `main` (workflow `.github/workflows/ci.yml`, check `CI / ci`).
+GitHub Actions ejecuta formato, lint, typecheck, consistencia de migraciones y build en cada pull request y push a `main`. En pull requests también rechaza cambios, renombres o eliminaciones de SQL de migraciones existentes: las correcciones deben ir en una migración nueva. Un segundo job levanta un Postgres 16 desechable, aplica todo el historial dos veces y comprueba el ledger, la llave foránea y el borrado en cascada (workflow `.github/workflows/ci.yml`, checks `CI / ci` y `CI / migrations`).
 
 Para bloquear merges a `main` hasta que pase el check (requiere admin del repo; en repos privados personales también GitHub Pro):
 
 1. Settings → Branches → Add branch protection rule (o Rules → Rulesets)
 2. Branch name pattern: `main`
 3. Activa **Require status checks to pass before merging**
-4. Busca y selecciona `CI / ci`
+4. Busca y selecciona `CI / ci` y `CI / migrations`
 5. Recomendado: **Require branches to be up to date before merging**
 
 Con la CLI (sustituye el owner/repo si hace falta):
@@ -37,7 +46,7 @@ gh api -X PUT repos/fcxmarquez/later/branches/main/protection \
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": ["CI / ci"]
+    "contexts": ["CI / ci", "CI / migrations"]
   },
   "enforce_admins": true,
   "required_pull_request_reviews": null,

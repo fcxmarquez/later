@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS "watchlist_items" (
 );
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "watchlist_items" ADD CONSTRAINT "watchlist_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES neon_auth."user"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "watchlist_items" ADD CONSTRAINT "watchlist_items_user_id_neon_auth_user_id_fk" FOREIGN KEY ("user_id") REFERENCES neon_auth."user"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

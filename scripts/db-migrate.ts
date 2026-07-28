@@ -1,35 +1,94 @@
 import { config as loadEnv } from "dotenv";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
-import { migrate } from "drizzle-orm/neon-http/migrator";
 import { resolve } from "node:path";
+import {
+  isPooledDatabaseUrl,
+  runMigrations,
+  toDirectNeonDatabaseUrl,
+} from "./db-migration-runner";
 
-loadEnv({ path: ".env.local" });
-loadEnv();
+const vercelDeployment = process.argv.includes("--vercel");
+
+if (!vercelDeployment) {
+  loadEnv({ path: ".env.local", quiet: true });
+  loadEnv({ quiet: true });
+}
 
 async function main() {
-  const productionOnly = process.argv.includes("--production-only");
+  const productionMigration = process.argv.includes("--production");
+  const vercelEnvironment = process.env.VERCEL_ENV;
 
-  if (productionOnly && process.env.VERCEL_ENV !== "production") {
+  if (
+    vercelDeployment &&
+    vercelEnvironment !== "production" &&
+    vercelEnvironment !== "preview"
+  ) {
     console.log(
-      `Skipping production migrations (VERCEL_ENV=${process.env.VERCEL_ENV ?? "local"}).`,
+      `Skipping Vercel migrations (VERCEL_ENV=${vercelEnvironment ?? "local"}).`,
     );
     return;
   }
 
-  const databaseUrl =
-    process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL;
-
-  if (!databaseUrl) {
-    console.log("Skipping migrations (no DATABASE_URL configured).");
-    return;
+  if (
+    productionMigration &&
+    vercelEnvironment !== "production" &&
+    process.env.MIGRATION_TARGET !== "production"
+  ) {
+    throw new Error(
+      "Production migrations require VERCEL_ENV=production or MIGRATION_TARGET=production.",
+    );
   }
 
-  const db = drizzle(neon(databaseUrl));
+  const directDatabaseUrl =
+    process.env.MIGRATION_DATABASE_URL ?? process.env.DATABASE_URL_UNPOOLED;
+  const configuredDatabaseUrl = process.env.DATABASE_URL;
+  const derivedLocalDirectUrl =
+    !vercelDeployment &&
+    !productionMigration &&
+    configuredDatabaseUrl &&
+    isPooledDatabaseUrl(configuredDatabaseUrl)
+      ? toDirectNeonDatabaseUrl(configuredDatabaseUrl)
+      : undefined;
+  const databaseUrl =
+    directDatabaseUrl ?? derivedLocalDirectUrl ?? configuredDatabaseUrl;
+
+  if (!databaseUrl) {
+    if (vercelDeployment && vercelEnvironment === "preview") {
+      console.log(
+        "Skipping preview migrations (no preview database configured; guest mode remains available).",
+      );
+      return;
+    }
+
+    throw new Error(
+      "No migration database configured. Set DATABASE_URL_UNPOOLED or MIGRATION_DATABASE_URL.",
+    );
+  }
+
+  const requiresDirectConnection =
+    productionMigration ||
+    (vercelDeployment &&
+      (vercelEnvironment === "production" || vercelEnvironment === "preview"));
+
+  if (requiresDirectConnection && isPooledDatabaseUrl(databaseUrl)) {
+    throw new Error(
+      "Deploy migrations require a direct Postgres URL, not a pooled (-pooler) URL.",
+    );
+  }
+
+  if (derivedLocalDirectUrl) {
+    console.log(
+      "Using the direct Neon endpoint derived from the local pooled URL.",
+    );
+  } else if (!directDatabaseUrl && isPooledDatabaseUrl(databaseUrl)) {
+    console.warn(
+      "Applying local migrations through a pooled URL. DATABASE_URL_UNPOOLED is recommended.",
+    );
+  }
+
   const migrationsFolder = resolve(process.cwd(), "db/migrations");
 
   console.log("Applying Drizzle migrations...");
-  await migrate(db, { migrationsFolder });
+  await runMigrations(databaseUrl, migrationsFolder);
   console.log("Migrations applied.");
 }
 
