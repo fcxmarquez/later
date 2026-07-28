@@ -487,7 +487,7 @@ export function DetailModal({
                 Dónde verlo
               </h3>
               <p className="mt-2 text-sm text-zinc-500">
-                Disponibilidad en España (streaming, alquiler o compra).
+                Disponibilidad en México (streaming, alquiler o compra).
               </p>
               <ul className="mt-5 flex gap-4 overflow-x-auto pb-2">
                 {view.providers.map((provider) => (
