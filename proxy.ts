@@ -8,6 +8,12 @@ const handleI18nRouting = createMiddleware(routing);
 
 const GUEST_ALLOWED_PATHS = new Set(["/", "/auth/unauthorized"]);
 
+function pathnameHasLocale(pathname: string) {
+  return routing.locales.some(
+    (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
+  );
+}
+
 function pathnameWithoutLocale(pathname: string) {
   const segments = pathname.split("/");
   const maybeLocale = segments[1];
@@ -24,12 +30,16 @@ function localeFromPathname(pathname: string) {
 }
 
 export default async function proxy(request: NextRequest) {
-  if (!isAuthConfigured()) {
+  const { pathname } = request.nextUrl;
+
+  // Negotiate / redirect locale first so unknown prefixes like `/fr` and
+  // unprefixed paths like `/auth/sign-in` never hit auth as raw routes.
+  if (!pathnameHasLocale(pathname) || !isAuthConfigured()) {
     return handleI18nRouting(request);
   }
 
-  const locale = localeFromPathname(request.nextUrl.pathname);
-  const pathWithoutLocale = pathnameWithoutLocale(request.nextUrl.pathname);
+  const locale = localeFromPathname(pathname);
+  const pathWithoutLocale = pathnameWithoutLocale(pathname);
   const response = await getAuth().middleware({
     loginUrl: `/${locale}/auth/sign-in`,
   })(request);

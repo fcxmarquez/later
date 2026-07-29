@@ -3,6 +3,7 @@ import { resolveLocale } from "@/i18n/locale";
 import { Play } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { isAllowedUser, isAuthConfigured } from "@/lib/auth/config";
 import { getAuth } from "@/lib/auth/server";
 
@@ -40,6 +41,9 @@ export default async function SignInPage({
       <div className="absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.035)_1px,transparent_1px)] [background-size:48px_48px] opacity-30" />
 
       <section className="glass relative w-full max-w-md rounded-[32px] border border-white/10 p-7 shadow-2xl sm:p-10">
+        <div className="absolute top-5 right-5">
+          <LanguageSwitcher />
+        </div>
         <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-white text-black shadow-lg shadow-white/10">
           <Play size={24} fill="currentColor" />
         </div>
