@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fallbackCatalog } from "@/lib/catalog";
 import { isAppLocale, routing, tmdbLanguage } from "@/i18n/routing";
 import { MediaItem } from "@/lib/types";
 
@@ -36,12 +35,10 @@ export async function GET(request: NextRequest) {
   const language = tmdbLanguage(locale);
   const token = process.env.TMDB_API_TOKEN;
   if (!token) {
-    const results = query
-      ? fallbackCatalog.filter((item) =>
-          item.title.toLowerCase().includes(query.toLowerCase()),
-        )
-      : fallbackCatalog;
-    return NextResponse.json({ results, fallback: true });
+    return NextResponse.json(
+      { error: "TMDB_API_TOKEN is not configured.", results: [] },
+      { status: 503 },
+    );
   }
   const endpoint = query
     ? `search/multi?query=${encodeURIComponent(query)}`
@@ -53,8 +50,12 @@ export async function GET(request: NextRequest) {
       next: { revalidate: 3600 },
     },
   );
-  if (!response.ok)
-    return NextResponse.json({ results: fallbackCatalog, fallback: true });
+  if (!response.ok) {
+    return NextResponse.json(
+      { error: "Failed to load catalog from TMDB.", results: [] },
+      { status: 502 },
+    );
+  }
   const data: { results: TmdbResult[] } = await response.json();
   const results: MediaItem[] = data.results
     .filter(

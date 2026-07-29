@@ -1,0 +1,63 @@
+import { Skeleton } from "@/components/ui/skeleton";
+
+export function MediaCardSkeleton() {
+  return (
+    <div className="w-[155px] shrink-0 sm:w-[190px] lg:w-[215px]">
+      <Skeleton className="aspect-[2/3] w-full rounded-2xl bg-white/10" />
+      <Skeleton className="mt-3 h-4 w-[80%] rounded-full bg-white/10" />
+      <Skeleton className="mt-2 h-3 w-1/2 rounded-full bg-white/10" />
+    </div>
+  );
+}
+
+export function MediaRowSkeleton({
+  title,
+  subtitle,
+  count = 8,
+}: {
+  title: string;
+  subtitle: string;
+  count?: number;
+}) {
+  return (
+    <section className="mb-16 pl-5 sm:pl-10 lg:pl-14">
+      <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h2>
+      <p className="mt-1 text-sm text-zinc-500">{subtitle}</p>
+      <div className="hide-scrollbar mt-6 flex gap-4 overflow-x-auto pr-5 pb-8 sm:gap-5 sm:pr-10 lg:pr-14">
+        {Array.from({ length: count }, (_, index) => (
+          <MediaCardSkeleton key={index} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function FeaturedHeroSkeleton() {
+  return (
+    <section className="relative flex min-h-[78vh] items-end overflow-hidden px-5 pb-16 sm:px-10 lg:min-h-[88vh] lg:px-14 lg:pb-24">
+      <Skeleton className="absolute inset-0 rounded-none bg-white/5" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#050507] via-transparent to-black/20" />
+      <div className="relative max-w-2xl space-y-5">
+        <Skeleton className="h-3 w-36 rounded-full bg-white/15" />
+        <Skeleton className="h-14 w-72 max-w-full rounded-xl bg-white/15 sm:h-20 sm:w-[28rem]" />
+        <Skeleton className="h-4 w-full max-w-xl rounded-full bg-white/10" />
+        <Skeleton className="h-4 w-[80%] max-w-lg rounded-full bg-white/10" />
+        <div className="flex gap-3 pt-2">
+          <Skeleton className="h-12 w-40 rounded-full bg-white/15" />
+          <Skeleton className="h-12 w-36 rounded-full bg-white/10" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function SearchGridSkeleton({ count = 12 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-9 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      {Array.from({ length: count }, (_, index) => (
+        <MediaCardSkeleton key={index} />
+      ))}
+    </div>
+  );
+}

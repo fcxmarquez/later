@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fallbackCatalog, getFallbackDetail } from "@/lib/catalog";
 import { isAppLocale, routing, tmdbLanguage } from "@/i18n/routing";
 import type {
   CastMember,
   MediaDetail,
-  MediaItem,
   MediaTrailer,
   MediaType,
   WatchProvider,
@@ -341,26 +339,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const baseItem: MediaItem = fallbackCatalog.find(
-    (entry) => entry.id === id && entry.mediaType === typeParam,
-  ) ?? {
-    id,
-    title: untitledByLocale[locale],
-    overview: noOverviewByLocale[locale],
-    posterPath: "",
-    backdropPath: "",
-    mediaType: typeParam,
-    year: "",
-    rating: 0,
-    genres: [],
-  };
-
   const token = process.env.TMDB_API_TOKEN;
   if (!token) {
-    return NextResponse.json({
-      detail: getFallbackDetail(baseItem),
-      fallback: true,
-    });
+    return NextResponse.json(
+      { error: "TMDB_API_TOKEN is not configured." },
+      { status: 503 },
+    );
   }
 
   try {
@@ -374,27 +358,27 @@ export async function GET(request: NextRequest) {
     );
 
     if (!response.ok) {
-      return NextResponse.json({
-        detail: getFallbackDetail(baseItem),
-        fallback: true,
-      });
+      return NextResponse.json(
+        { error: "Failed to load title details from TMDB." },
+        { status: 502 },
+      );
     }
 
     const data: TmdbDetailResponse = await response.json();
     if (!data.poster_path && !data.backdrop_path) {
-      return NextResponse.json({
-        detail: getFallbackDetail(baseItem),
-        fallback: true,
-      });
+      return NextResponse.json(
+        { error: "Title details are incomplete." },
+        { status: 404 },
+      );
     }
 
     return NextResponse.json({
       detail: mapDetail(data, typeParam, locale, preferredRegion),
     });
   } catch {
-    return NextResponse.json({
-      detail: getFallbackDetail(baseItem),
-      fallback: true,
-    });
+    return NextResponse.json(
+      { error: "Failed to load title details from TMDB." },
+      { status: 502 },
+    );
   }
 }

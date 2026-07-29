@@ -25,15 +25,18 @@
   },
   "Home": {
     "eyebrow": "Picked for you",
-    "featuredAlt": "Featured scene from Interstellar",
-    "featuredOverview": "An odyssey through space and time to find a new home for humanity.",
+    "featuredAlt": "Featured scene from {title}",
     "seeDetails": "See details",
     "inYourList": "In your list",
     "myList": "My list",
     "trendingTitle": "Trending this week",
     "trendingSubtitle": "Stories everyone is talking about",
     "epicTitle": "An epic night in",
-    "epicSubtitle": "Vast worlds, impossible choices"
+    "epicSubtitle": "Vast worlds, impossible choices",
+    "loadErrorTitle": "We couldn't load the catalog",
+    "loadErrorBody": "Check your connection and try again.",
+    "emptyTitle": "No stories to show",
+    "emptyBody": "The catalog is empty right now. Try again in a moment."
   },
   "Search": {
     "eyebrow": "Explore",
