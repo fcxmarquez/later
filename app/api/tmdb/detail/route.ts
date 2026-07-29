@@ -8,7 +8,10 @@ import type {
   MediaTrailer,
   MediaType,
   WatchProvider,
+  WatchProviderRegion,
 } from "@/lib/types";
+
+const DEFAULT_PROVIDER_REGION: WatchProviderRegion = "US";
 
 const untitledByLocale = {
   es: "Sin título",
@@ -36,18 +39,16 @@ type TmdbProvider = {
   logo_path: string;
   display_priority?: number;
 };
+type TmdbProviderRegion = {
+  link?: string;
+  flatrate?: TmdbProvider[];
+  rent?: TmdbProvider[];
+  buy?: TmdbProvider[];
+  ads?: TmdbProvider[];
+  free?: TmdbProvider[];
+};
 type TmdbWatchProviders = {
-  results?: Record<
-    string,
-    {
-      link?: string;
-      flatrate?: TmdbProvider[];
-      rent?: TmdbProvider[];
-      buy?: TmdbProvider[];
-      ads?: TmdbProvider[];
-      free?: TmdbProvider[];
-    }
-  >;
+  results?: Record<string, TmdbProviderRegion>;
 };
 type TmdbVideo = {
   id: string;
@@ -81,47 +82,64 @@ type TmdbDetailResponse = {
   videos?: { results?: TmdbVideo[] };
 };
 
+export const dynamic = "force-dynamic";
+
 function isMediaType(value: string | null): value is MediaType {
   return value === "movie" || value === "tv";
 }
 
-function regionHasProviders(
-  region:
-    | {
-        flatrate?: TmdbProvider[];
-        rent?: TmdbProvider[];
-        buy?: TmdbProvider[];
-        ads?: TmdbProvider[];
-        free?: TmdbProvider[];
-      }
-    | undefined,
-) {
+function isCountryCode(value: string | null | undefined): value is string {
+  return Boolean(value && /^[A-Za-z]{2}$/.test(value));
+}
+
+function resolvePreferredRegion(request: NextRequest): WatchProviderRegion {
+  const override = request.nextUrl.searchParams.get("region");
+  if (isCountryCode(override)) {
+    return override.toUpperCase();
+  }
+
+  const geoCountry = request.headers.get("x-vercel-ip-country");
+  if (isCountryCode(geoCountry) && geoCountry.toUpperCase() !== "XX") {
+    return geoCountry.toUpperCase();
+  }
+
+  return DEFAULT_PROVIDER_REGION;
+}
+
+function regionHasProviders(region: TmdbProviderRegion | undefined) {
   if (!region) return false;
   return [region.flatrate, region.ads, region.free, region.rent, region.buy]
     .filter(Boolean)
     .some((bucket) => (bucket?.length ?? 0) > 0);
 }
 
-function mapProviders(detail: TmdbDetailResponse): {
+function mapProviders(
+  detail: TmdbDetailResponse,
+  preferredRegion: WatchProviderRegion,
+): {
   providers: WatchProvider[];
-  providersRegion: "MX" | "US" | null;
+  providersRegion: WatchProviderRegion | null;
 } {
   const results = detail["watch/providers"]?.results;
-  const mx = results?.MX;
-  const us = results?.US;
-  const providersRegion = regionHasProviders(mx)
-    ? "MX"
+  const preferred = results?.[preferredRegion];
+  const us = results?.[DEFAULT_PROVIDER_REGION];
+  const providersRegion = regionHasProviders(preferred)
+    ? preferredRegion
     : regionHasProviders(us)
-      ? "US"
+      ? DEFAULT_PROVIDER_REGION
       : null;
-  const region =
-    providersRegion === "MX" ? mx : providersRegion === "US" ? us : {};
+  const region: TmdbProviderRegion =
+    providersRegion === preferredRegion
+      ? (preferred ?? {})
+      : providersRegion === DEFAULT_PROVIDER_REGION
+        ? (us ?? {})
+        : {};
   const buckets = [
-    region?.flatrate,
-    region?.ads,
-    region?.free,
-    region?.rent,
-    region?.buy,
+    region.flatrate,
+    region.ads,
+    region.free,
+    region.rent,
+    region.buy,
   ];
   const providers: WatchProvider[] = [];
   const seen = new Set<number>();
@@ -174,6 +192,7 @@ function mapDetail(
   detail: TmdbDetailResponse,
   mediaType: MediaType,
   locale: "es" | "en",
+  preferredRegion: WatchProviderRegion,
 ): MediaDetail {
   const cast: CastMember[] = (detail.credits?.cast || [])
     .slice()
@@ -195,7 +214,7 @@ function mapDetail(
       ? (detail.runtime ?? null)
       : (detail.episode_run_time?.[0] ?? detail.runtime ?? null);
 
-  const { providers, providersRegion } = mapProviders(detail);
+  const { providers, providersRegion } = mapProviders(detail, preferredRegion);
 
   return {
     id: detail.id,
@@ -229,6 +248,7 @@ export async function GET(request: NextRequest) {
   const localeParam =
     request.nextUrl.searchParams.get("locale") || routing.defaultLocale;
   const locale = isAppLocale(localeParam) ? localeParam : routing.defaultLocale;
+  const preferredRegion = resolvePreferredRegion(request);
   const language = tmdbLanguage(locale);
   const id = Number(idParam);
 
@@ -287,7 +307,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      detail: mapDetail(data, typeParam, locale),
+      detail: mapDetail(data, typeParam, locale, preferredRegion),
     });
   } catch {
     return NextResponse.json({
