@@ -9,13 +9,10 @@ import {
   Eye,
   Film,
   LoaderCircle,
-  LogIn,
-  LogOut,
   Play,
   Search,
   X,
 } from "lucide-react";
-import { Link } from "@/i18n/navigation";
 import { getAuthClient } from "@/lib/auth/client";
 import { featured, fallbackCatalog, imageUrl } from "@/lib/catalog";
 import {
@@ -25,9 +22,9 @@ import {
 } from "@/lib/guest-storage";
 import type { MediaItem, SavedMedia } from "@/lib/types";
 import { type WatchlistMode, useWatchlist } from "@/store/watchlist";
-import { LanguageSwitcher } from "./language-switcher";
-import { MediaCard } from "./media-card";
 import { DetailModal } from "./detail-modal";
+import { MediaCard } from "./media-card";
+import { ProfileMenu } from "./profile-menu";
 
 type View = "home" | "search" | "list";
 
@@ -183,52 +180,12 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <LanguageSwitcher />
-          {isGuest ? (
-            <div className="glass flex items-center gap-2 rounded-full p-1 pr-2">
-              <span
-                className="grid size-8 place-items-center rounded-full bg-white/15 text-sm font-bold text-white"
-                title={tNav("guestMode")}
-              >
-                I
-              </span>
-              <span className="hidden max-w-36 truncate text-xs text-zinc-300 lg:block">
-                {tNav("guest")}
-              </span>
-              <Link
-                href="/auth/sign-in"
-                className="grid size-8 place-items-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-white"
-                aria-label={tNav("signIn")}
-              >
-                <LogIn size={16} />
-              </Link>
-            </div>
-          ) : (
-            <div className="glass flex items-center gap-2 rounded-full p-1 pr-2">
-              <span
-                className="grid size-8 place-items-center rounded-full bg-white text-sm font-bold text-black"
-                title={tNav("signedIn")}
-              >
-                {user?.name?.charAt(0).toUpperCase() || "F"}
-              </span>
-              <span className="hidden max-w-36 truncate text-xs text-zinc-300 lg:block">
-                {user?.name}
-              </span>
-              <button
-                type="button"
-                onClick={signOut}
-                disabled={isSigningOut}
-                className="grid size-8 place-items-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-white disabled:cursor-wait"
-                aria-label={tNav("signOut")}
-              >
-                {isSigningOut ? (
-                  <LoaderCircle className="animate-spin" size={16} />
-                ) : (
-                  <LogOut size={16} />
-                )}
-              </button>
-            </div>
-          )}
+          <ProfileMenu
+            isGuest={isGuest}
+            userName={user?.name ?? null}
+            isSigningOut={isSigningOut}
+            onSignOut={signOut}
+          />
         </div>
       </header>
 

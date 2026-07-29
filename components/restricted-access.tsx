@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { LoaderCircle, LockKeyhole, RotateCcw } from "lucide-react";
 import { getAuthClient } from "@/lib/auth/client";
-import { LanguageSwitcher } from "./language-switcher";
 
 export function RestrictedAccess() {
   const t = useTranslations("Restricted");
@@ -19,10 +18,7 @@ export function RestrictedAccess() {
 
   return (
     <main className="grid min-h-screen place-items-center px-5 py-10">
-      <section className="glass relative w-full max-w-md rounded-[32px] border border-white/10 p-8 text-center shadow-2xl sm:p-10">
-        <div className="absolute top-5 right-5">
-          <LanguageSwitcher />
-        </div>
+      <section className="glass w-full max-w-md rounded-[32px] border border-white/10 p-8 text-center shadow-2xl sm:p-10">
         <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-amber-300/10 text-amber-200 ring-1 ring-amber-300/20">
           <LockKeyhole size={25} />
         </span>
