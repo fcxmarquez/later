@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fallbackCatalog } from "@/lib/catalog";
+import { isAppLocale, tmdbLanguage } from "@/i18n/routing";
 import { MediaItem } from "@/lib/types";
 
 type TmdbResult = {
@@ -15,10 +16,23 @@ type TmdbResult = {
   vote_average?: number;
 };
 
+const untitledByLocale = {
+  es: "Sin título",
+  en: "Untitled",
+} as const;
+
+const noOverviewByLocale = {
+  es: "Sin descripción disponible.",
+  en: "No description available.",
+} as const;
+
 export async function GET(request: NextRequest) {
   // Catalog is public so guest mode can browse and search.
   // Watchlist mutations remain authenticated-only.
   const query = request.nextUrl.searchParams.get("query")?.trim();
+  const localeParam = request.nextUrl.searchParams.get("locale") || "es";
+  const locale = isAppLocale(localeParam) ? localeParam : "es";
+  const language = tmdbLanguage(locale);
   const token = process.env.TMDB_API_TOKEN;
   if (!token) {
     const results = query
@@ -32,7 +46,7 @@ export async function GET(request: NextRequest) {
     ? `search/multi?query=${encodeURIComponent(query)}`
     : "trending/all/week?";
   const response = await fetch(
-    `https://api.themoviedb.org/3/${endpoint}${query ? "&" : ""}language=es-ES`,
+    `https://api.themoviedb.org/3/${endpoint}${query ? "&" : ""}language=${language}`,
     {
       headers: { Authorization: `Bearer ${token}` },
       next: { revalidate: 3600 },
@@ -49,8 +63,8 @@ export async function GET(request: NextRequest) {
     )
     .map((item) => ({
       id: item.id,
-      title: item.title || item.name || "Sin título",
-      overview: item.overview || "Sin descripción disponible.",
+      title: item.title || item.name || untitledByLocale[locale],
+      overview: item.overview || noOverviewByLocale[locale],
       posterPath: item.poster_path,
       backdropPath: item.backdrop_path || item.poster_path,
       mediaType: item.media_type as "movie" | "tv",

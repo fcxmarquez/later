@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { LoaderCircle, LockKeyhole, RotateCcw } from "lucide-react";
 import { getAuthClient } from "@/lib/auth/client";
 
 export function RestrictedAccess() {
+  const t = useTranslations("Restricted");
+  const locale = useLocale();
   const [isSigningOut, setIsSigningOut] = useState(true);
 
   useEffect(() => {
@@ -20,18 +23,14 @@ export function RestrictedAccess() {
           <LockKeyhole size={25} />
         </span>
         <p className="mt-7 text-xs font-bold tracking-[.3em] text-amber-200 uppercase">
-          Acceso restringido
+          {t("eyebrow")}
         </p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight">
-          Esta cuenta no tiene acceso.
-        </h1>
-        <p className="mt-4 text-sm leading-6 text-zinc-400">
-          Later está disponible únicamente para la cuenta autorizada.
-        </p>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="mt-4 text-sm leading-6 text-zinc-400">{t("body")}</p>
         <button
           type="button"
           disabled={isSigningOut}
-          onClick={() => window.location.assign("/auth/sign-in")}
+          onClick={() => window.location.assign(`/${locale}/auth/sign-in`)}
           className="mt-8 flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-3.5 font-semibold text-black transition hover:scale-[1.02] disabled:cursor-wait disabled:opacity-70"
         >
           {isSigningOut ? (
@@ -39,15 +38,15 @@ export function RestrictedAccess() {
           ) : (
             <RotateCcw size={19} />
           )}
-          {isSigningOut ? "Cerrando sesión…" : "Probar con otra cuenta"}
+          {isSigningOut ? t("signingOut") : t("tryAnother")}
         </button>
         <button
           type="button"
           disabled={isSigningOut}
-          onClick={() => window.location.assign("/")}
+          onClick={() => window.location.assign(`/${locale}`)}
           className="mt-3 flex w-full items-center justify-center rounded-full bg-white/10 px-5 py-3.5 font-semibold text-white ring-1 ring-white/10 transition hover:bg-white/15 disabled:cursor-wait disabled:opacity-70"
         >
-          Continuar como invitado
+          {t("continueGuest")}
         </button>
       </section>
     </main>

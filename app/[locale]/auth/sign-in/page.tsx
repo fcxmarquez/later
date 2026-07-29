@@ -1,6 +1,7 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
+import { Link, redirect } from "@/i18n/navigation";
+import { resolveLocale } from "@/i18n/locale";
 import { Play } from "lucide-react";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { isAllowedUser, isAuthConfigured } from "@/lib/auth/config";
 import { getAuth } from "@/lib/auth/server";
@@ -8,17 +9,26 @@ import { getAuth } from "@/lib/auth/server";
 export const dynamic = "force-dynamic";
 
 export default async function SignInPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ locale: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
+  const { locale: localeParam } = await params;
+  const locale = resolveLocale(localeParam);
+  setRequestLocale(locale);
+  const t = await getTranslations("SignIn");
   const authReady = isAuthConfigured();
 
   if (authReady) {
     const { data: session } = await getAuth().getSession();
 
     if (session?.user) {
-      redirect(isAllowedUser(session.user) ? "/" : "/auth/unauthorized");
+      redirect({
+        href: isAllowedUser(session.user) ? "/" : "/auth/unauthorized",
+        locale,
+      });
     }
   }
 
@@ -37,12 +47,10 @@ export default async function SignInPage({
           later
         </p>
         <h1 className="mt-3 text-center text-3xl font-bold tracking-tight sm:text-4xl">
-          Tu lista te espera.
+          {t("title")}
         </h1>
         <p className="mx-auto mt-4 max-w-sm text-center text-sm leading-6 text-zinc-400">
-          {authReady
-            ? "Entra con Google para sincronizar en la nube, o continúa como invitado y guarda tu lista en este dispositivo."
-            : "El login con Google aún no está configurado en este entorno. Puedes continuar como invitado y guardar tu lista en este dispositivo."}
+          {authReady ? t("bodyReady") : t("bodyGuestOnly")}
         </p>
 
         <div className="mt-8 space-y-3">
@@ -51,7 +59,7 @@ export default async function SignInPage({
             href="/"
             className="flex w-full items-center justify-center rounded-full bg-white/10 px-5 py-3.5 font-semibold text-white ring-1 ring-white/10 transition hover:bg-white/15"
           >
-            Continuar como invitado
+            {t("continueGuest")}
           </Link>
         </div>
 
@@ -60,12 +68,12 @@ export default async function SignInPage({
             className="mt-5 rounded-2xl bg-red-400/10 px-4 py-3 text-center text-sm text-red-200 ring-1 ring-red-400/20"
             role="alert"
           >
-            Google no pudo completar el inicio de sesión. Inténtalo de nuevo.
+            {t("oauthError")}
           </p>
         )}
 
         <p className="mt-6 text-center text-xs leading-5 text-zinc-600">
-          La sincronización en la nube requiere una cuenta autorizada.
+          {t("footnote")}
         </p>
       </section>
     </main>

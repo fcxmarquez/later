@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fallbackCatalog, getFallbackDetail } from "@/lib/catalog";
+import { isAppLocale, tmdbLanguage } from "@/i18n/routing";
 import type {
   CastMember,
   MediaDetail,
@@ -7,6 +8,16 @@ import type {
   MediaType,
   WatchProvider,
 } from "@/lib/types";
+
+const untitledByLocale = {
+  es: "Sin título",
+  en: "Untitled",
+} as const;
+
+const noOverviewByLocale = {
+  es: "Sin descripción disponible.",
+  en: "No description available.",
+} as const;
 
 type TmdbGenre = { id: number; name: string };
 type TmdbCast = {
@@ -95,6 +106,7 @@ function mapProviders(detail: TmdbDetailResponse): WatchProvider[] {
 function mapDetail(
   detail: TmdbDetailResponse,
   mediaType: MediaType,
+  locale: "es" | "en",
 ): MediaDetail {
   const cast: CastMember[] = (detail.credits?.cast || [])
     .slice()
@@ -118,8 +130,8 @@ function mapDetail(
 
   return {
     id: detail.id,
-    title: detail.title || detail.name || "Sin título",
-    overview: detail.overview || "Sin descripción disponible.",
+    title: detail.title || detail.name || untitledByLocale[locale],
+    overview: detail.overview || noOverviewByLocale[locale],
     posterPath: detail.poster_path || "",
     backdropPath: detail.backdrop_path || detail.poster_path || "",
     mediaType,
@@ -143,6 +155,9 @@ function mapDetail(
 export async function GET(request: NextRequest) {
   const idParam = request.nextUrl.searchParams.get("id");
   const typeParam = request.nextUrl.searchParams.get("type");
+  const localeParam = request.nextUrl.searchParams.get("locale") || "es";
+  const locale = isAppLocale(localeParam) ? localeParam : "es";
+  const language = tmdbLanguage(locale);
   const id = Number(idParam);
 
   if (!idParam || !Number.isFinite(id) || id <= 0 || !isMediaType(typeParam)) {
@@ -156,8 +171,8 @@ export async function GET(request: NextRequest) {
     (entry) => entry.id === id && entry.mediaType === typeParam,
   ) ?? {
     id,
-    title: "Sin título",
-    overview: "Sin descripción disponible.",
+    title: untitledByLocale[locale],
+    overview: noOverviewByLocale[locale],
     posterPath: "",
     backdropPath: "",
     mediaType: typeParam,
@@ -176,7 +191,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const response = await fetch(
-      `https://api.themoviedb.org/3/${typeParam}/${id}?language=es-ES&append_to_response=credits,watch/providers`,
+      `https://api.themoviedb.org/3/${typeParam}/${id}?language=${language}&append_to_response=credits,watch/providers`,
       {
         headers: { Authorization: `Bearer ${token}` },
         next: { revalidate: 3600 },
@@ -198,7 +213,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ detail: mapDetail(data, typeParam) });
+    return NextResponse.json({
+      detail: mapDetail(data, typeParam, locale),
+    });
   } catch {
     return NextResponse.json({
       detail: getFallbackDetail(baseItem),
