@@ -86,6 +86,7 @@
     "enrichmentError": "We couldn't enrich this title. Showing basic information.",
     "whereToWatch": "Where to watch",
     "whereToWatchHint": "Availability in {regionName} (streaming, rent, or buy).",
+    "inCinemasHint": "Currently in theaters in {regionName}.",
     "cast": "Cast",
     "trailers": "Trailers",
     "playTrailer": "Play trailer: {name}",
