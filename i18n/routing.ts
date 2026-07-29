@@ -1,8 +1,8 @@
 import { defineRouting } from "next-intl/routing";
 
 export const routing = defineRouting({
-  locales: ["es", "en"],
-  defaultLocale: "es",
+  locales: ["en", "es"],
+  defaultLocale: "en",
   localePrefix: "always",
 });
 
@@ -13,5 +13,5 @@ export function isAppLocale(value: string): value is AppLocale {
 }
 
 export function tmdbLanguage(locale: string): "es-ES" | "en-US" {
-  return locale === "en" ? "en-US" : "es-ES";
+  return locale === "es" ? "es-ES" : "en-US";
 }

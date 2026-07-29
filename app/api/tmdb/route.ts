@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fallbackCatalog } from "@/lib/catalog";
-import { isAppLocale, tmdbLanguage } from "@/i18n/routing";
+import { isAppLocale, routing, tmdbLanguage } from "@/i18n/routing";
 import { MediaItem } from "@/lib/types";
 
 type TmdbResult = {
@@ -30,8 +30,9 @@ export async function GET(request: NextRequest) {
   // Catalog is public so guest mode can browse and search.
   // Watchlist mutations remain authenticated-only.
   const query = request.nextUrl.searchParams.get("query")?.trim();
-  const localeParam = request.nextUrl.searchParams.get("locale") || "es";
-  const locale = isAppLocale(localeParam) ? localeParam : "es";
+  const localeParam =
+    request.nextUrl.searchParams.get("locale") || routing.defaultLocale;
+  const locale = isAppLocale(localeParam) ? localeParam : routing.defaultLocale;
   const language = tmdbLanguage(locale);
   const token = process.env.TMDB_API_TOKEN;
   if (!token) {

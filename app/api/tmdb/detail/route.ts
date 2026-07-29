@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fallbackCatalog, getFallbackDetail } from "@/lib/catalog";
-import { isAppLocale, tmdbLanguage } from "@/i18n/routing";
+import { isAppLocale, routing, tmdbLanguage } from "@/i18n/routing";
 import type {
   CastMember,
   MediaDetail,
@@ -155,8 +155,9 @@ function mapDetail(
 export async function GET(request: NextRequest) {
   const idParam = request.nextUrl.searchParams.get("id");
   const typeParam = request.nextUrl.searchParams.get("type");
-  const localeParam = request.nextUrl.searchParams.get("locale") || "es";
-  const locale = isAppLocale(localeParam) ? localeParam : "es";
+  const localeParam =
+    request.nextUrl.searchParams.get("locale") || routing.defaultLocale;
+  const locale = isAppLocale(localeParam) ? localeParam : routing.defaultLocale;
   const language = tmdbLanguage(locale);
   const id = Number(idParam);
 
