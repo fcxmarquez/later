@@ -38,6 +38,7 @@ function mergeDetail(item: MediaItem, detail: MediaDetail | null): MediaDetail {
       ...item,
       cast: [],
       providers: [],
+      providersRegion: null,
       runtime: null,
       seasons: null,
       status: null,
@@ -501,7 +502,9 @@ export function DetailModal({
                 {t("whereToWatch")}
               </h3>
               <p className="mt-2 text-sm text-zinc-500">
-                {t("whereToWatchHint")}
+                {t("whereToWatchHint", {
+                  region: view.providersRegion || "MX",
+                })}
               </p>
               <ul className="mt-5 flex gap-4 overflow-x-auto pb-2">
                 {view.providers.map((provider) => (

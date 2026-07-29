@@ -662,17 +662,23 @@ export const fallbackCatalog: MediaItem[] = Object.values(demoDetails)
   .sort((a, b) => (a.id === 157336 ? -1 : b.id === 157336 ? 1 : 0));
 
 export function getFallbackDetail(item: MediaItem): MediaDetail {
-  return (
-    demoDetails[`${item.mediaType}-${item.id}`] ?? {
-      ...item,
-      cast: [],
-      providers: [],
-      tagline: undefined,
-      runtime: null,
-      seasons: null,
-      status: null,
-      director: null,
-      creators: [],
-    }
-  );
+  const fallback = demoDetails[`${item.mediaType}-${item.id}`];
+  if (fallback) {
+    return {
+      ...fallback,
+      providersRegion: fallback.providers.length ? "MX" : null,
+    };
+  }
+  return {
+    ...item,
+    cast: [],
+    providers: [],
+    providersRegion: null,
+    tagline: undefined,
+    runtime: null,
+    seasons: null,
+    status: null,
+    director: null,
+    creators: [],
+  };
 }

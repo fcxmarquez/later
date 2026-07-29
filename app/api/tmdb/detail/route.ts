@@ -74,17 +74,43 @@ function isMediaType(value: string | null): value is MediaType {
   return value === "movie" || value === "tv";
 }
 
-function mapProviders(detail: TmdbDetailResponse): WatchProvider[] {
+function regionHasProviders(
+  region:
+    | {
+        flatrate?: TmdbProvider[];
+        rent?: TmdbProvider[];
+        buy?: TmdbProvider[];
+        ads?: TmdbProvider[];
+        free?: TmdbProvider[];
+      }
+    | undefined,
+) {
+  if (!region) return false;
+  return [region.flatrate, region.ads, region.free, region.rent, region.buy]
+    .filter(Boolean)
+    .some((bucket) => (bucket?.length ?? 0) > 0);
+}
+
+function mapProviders(detail: TmdbDetailResponse): {
+  providers: WatchProvider[];
+  providersRegion: "MX" | "US" | null;
+} {
+  const results = detail["watch/providers"]?.results;
+  const mx = results?.MX;
+  const us = results?.US;
+  const providersRegion = regionHasProviders(mx)
+    ? "MX"
+    : regionHasProviders(us)
+      ? "US"
+      : null;
   const region =
-    detail["watch/providers"]?.results?.MX ||
-    detail["watch/providers"]?.results?.US ||
-    {};
+    providersRegion === "MX" ? mx : providersRegion === "US" ? us : {};
   const buckets = [
-    region.flatrate,
-    region.ads,
-    region.free,
-    region.rent,
-    region.buy,
+    region?.flatrate,
+    region?.ads,
+    region?.free,
+    region?.rent,
+    region?.buy,
   ];
   const providers: WatchProvider[] = [];
   const seen = new Set<number>();
@@ -97,10 +123,12 @@ function mapProviders(detail: TmdbDetailResponse): WatchProvider[] {
         name: provider.provider_name.trim(),
         logoPath: provider.logo_path,
       });
-      if (providers.length >= 8) return providers;
+      if (providers.length >= 8) {
+        return { providers, providersRegion };
+      }
     }
   }
-  return providers;
+  return { providers, providersRegion };
 }
 
 function mapDetail(
@@ -128,6 +156,8 @@ function mapDetail(
       ? (detail.runtime ?? null)
       : (detail.episode_run_time?.[0] ?? detail.runtime ?? null);
 
+  const { providers, providersRegion } = mapProviders(detail);
+
   return {
     id: detail.id,
     title: detail.title || detail.name || untitledByLocale[locale],
@@ -146,7 +176,8 @@ function mapDetail(
     seasons: mediaType === "tv" ? (detail.number_of_seasons ?? null) : null,
     status: detail.status || null,
     cast,
-    providers: mapProviders(detail),
+    providers,
+    providersRegion,
     director,
     creators,
   };

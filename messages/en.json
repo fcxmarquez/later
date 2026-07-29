@@ -85,7 +85,7 @@
     "seasons": "{count} seasons",
     "enrichmentError": "We couldn't enrich this title. Showing basic information.",
     "whereToWatch": "Where to watch",
-    "whereToWatchHint": "Availability in Mexico (streaming, rent, or buy).",
+    "whereToWatchHint": "Availability in {region, select, MX {Mexico} US {USA} other {Mexico}} (streaming, rent, or buy).",
     "cast": "Cast"
   },
   "WatchlistErrors": {
