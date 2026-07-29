@@ -86,7 +86,10 @@
     "enrichmentError": "No pudimos enriquecer la ficha. Mostramos la información básica.",
     "whereToWatch": "Dónde verlo",
     "whereToWatchHint": "Disponibilidad en {region, select, MX {México} US {EE. UU.} other {México}} (streaming, alquiler o compra).",
-    "cast": "Reparto"
+    "cast": "Reparto",
+    "trailers": "Tráilers",
+    "playTrailer": "Reproducir tráiler: {name}",
+    "closeTrailer": "Cerrar tráiler"
   },
   "WatchlistErrors": {
     "addFailed": "No pudimos añadir el título. Inténtalo de nuevo.",

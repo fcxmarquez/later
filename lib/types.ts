@@ -27,6 +27,15 @@ export type WatchProvider = {
 
 export type WatchProviderRegion = "MX" | "US";
 
+export type MediaTrailer = {
+  id: string;
+  key: string;
+  name: string;
+  site: "YouTube";
+  type: "Trailer" | "Teaser";
+  official: boolean;
+};
+
 export type MediaDetail = MediaItem & {
   tagline?: string;
   runtime?: number | null;
@@ -37,6 +46,7 @@ export type MediaDetail = MediaItem & {
   providersRegion?: WatchProviderRegion | null;
   director?: string | null;
   creators?: string[];
+  trailers: MediaTrailer[];
 };
 
 export type SavedMedia = MediaItem & { watched: boolean; addedAt: number };
