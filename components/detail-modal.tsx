@@ -50,6 +50,7 @@ function mergeDetail(item: MediaItem, detail: MediaDetail | null): MediaDetail {
       cast: [],
       providers: [],
       providersRegion: null,
+      inCinemas: false,
       runtime: null,
       seasons: null,
       status: null,
@@ -814,25 +815,44 @@ export function DetailModal({
             )}
           </section>
 
-          {view.providers.length > 0 && (
+          {view.inCinemas ? (
             <section className="detail-stagger">
               <h3 className="text-xs font-bold tracking-[0.28em] text-zinc-500 uppercase">
                 {t("whereToWatch")}
               </h3>
               <p className="mt-2 text-sm text-zinc-500">
-                {t("whereToWatchHint", {
+                {t("inCinemasHint", {
                   regionName: formatRegionName(
                     view.providersRegion || "US",
                     locale,
                   ),
                 })}
               </p>
-              <ul className="mt-5 flex gap-4 overflow-x-auto pb-2">
-                {view.providers.map((provider) => (
-                  <ProviderBadge key={provider.id} provider={provider} />
-                ))}
-              </ul>
+              <p className="mt-5 inline-flex items-center border border-white/20 bg-white/[0.06] px-4 py-2 text-sm font-medium tracking-wide text-zinc-100">
+                {t("inCinemas")}
+              </p>
             </section>
+          ) : (
+            view.providers.length > 0 && (
+              <section className="detail-stagger">
+                <h3 className="text-xs font-bold tracking-[0.28em] text-zinc-500 uppercase">
+                  {t("whereToWatch")}
+                </h3>
+                <p className="mt-2 text-sm text-zinc-500">
+                  {t("whereToWatchHint", {
+                    regionName: formatRegionName(
+                      view.providersRegion || "US",
+                      locale,
+                    ),
+                  })}
+                </p>
+                <ul className="mt-5 flex gap-4 overflow-x-auto pb-2">
+                  {view.providers.map((provider) => (
+                    <ProviderBadge key={provider.id} provider={provider} />
+                  ))}
+                </ul>
+              </section>
+            )
           )}
 
           {view.cast.length > 0 && (

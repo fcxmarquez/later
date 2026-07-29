@@ -116,38 +116,8 @@ const demoDetails: Record<string, MediaDetail> = {
         profilePath: "/wzH60SrqWp2XMkBfLgdBhx5EJ82.jpg",
       },
     ],
-    providers: [
-      {
-        id: 119,
-        name: "Amazon Prime Video",
-        logoPath: "/pvske1MyAoymrs5bguRfVqYiM9a.jpg",
-      },
-      {
-        id: 149,
-        name: "Movistar Plus+ Ficción Total",
-        logoPath: "/f6TRLB3H4jDpFEZ0z2KWSSvu1SB.jpg",
-      },
-      {
-        id: 1899,
-        name: "HBO Max",
-        logoPath: "/jbe4gVSfRlbPTdESXhEKpornsfu.jpg",
-      },
-      {
-        id: 2100,
-        name: "Amazon Prime Video with Ads",
-        logoPath: "/8aBqoNeGGr0oSA85iopgNZUOTOc.jpg",
-      },
-      {
-        id: 1825,
-        name: "HBO Max Amazon Channel",
-        logoPath: "/embS4GPK7c8pjbuY2O2irV5rYch.jpg",
-      },
-      {
-        id: 2,
-        name: "Apple TV Store",
-        logoPath: "/SPnB1qiCkYfirS2it3hZORwGVn.jpg",
-      },
-    ],
+    providers: [],
+    inCinemas: true,
     trailers: [
       demoTrailer("zSWdZVtXT7E", "Interstellar - Official Trailer"),
       demoTrailer("Lm8p5rlrP6I", "Interstellar - Trailer 3", "Teaser"),
@@ -705,7 +675,8 @@ export function getFallbackDetail(item: MediaItem): MediaDetail {
   if (fallback) {
     return {
       ...fallback,
-      providersRegion: fallback.providers.length ? "MX" : null,
+      providersRegion:
+        fallback.inCinemas || fallback.providers.length ? "MX" : null,
     };
   }
   return {
@@ -713,6 +684,7 @@ export function getFallbackDetail(item: MediaItem): MediaDetail {
     cast: [],
     providers: [],
     providersRegion: null,
+    inCinemas: false,
     tagline: undefined,
     runtime: null,
     seasons: null,

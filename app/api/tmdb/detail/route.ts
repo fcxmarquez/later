@@ -60,6 +60,27 @@ type TmdbVideo = {
   published_at?: string;
 };
 
+/** TMDB release types: 2 = Theatrical (limited), 3 = Theatrical. */
+const THEATRICAL_RELEASE_TYPES = new Set([2, 3]);
+/** Approximate window used by TMDB now_playing for theatrical runs. */
+const THEATRICAL_WINDOW_DAYS = 60;
+
+type TmdbReleaseDate = {
+  certification?: string;
+  descriptors?: string[];
+  iso_639_1?: string;
+  note?: string;
+  release_date?: string;
+  type?: number;
+};
+
+type TmdbReleaseDates = {
+  results?: Array<{
+    iso_3166_1?: string;
+    release_dates?: TmdbReleaseDate[];
+  }>;
+};
+
 type TmdbDetailResponse = {
   id: number;
   title?: string;
@@ -80,6 +101,7 @@ type TmdbDetailResponse = {
   credits?: { cast?: TmdbCast[]; crew?: TmdbCrew[] };
   "watch/providers"?: TmdbWatchProviders;
   videos?: { results?: TmdbVideo[] };
+  release_dates?: TmdbReleaseDates;
 };
 
 export const dynamic = "force-dynamic";
@@ -111,6 +133,58 @@ function regionHasProviders(region: TmdbProviderRegion | undefined) {
   return [region.flatrate, region.ads, region.free, region.rent, region.buy]
     .filter(Boolean)
     .some((bucket) => (bucket?.length ?? 0) > 0);
+}
+
+function parseReleaseDay(value: string | undefined): Date | null {
+  if (!value) return null;
+  const day = value.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+  const date = new Date(`${day}T00:00:00Z`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function startOfUtcDay(date: Date) {
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
+function isInCinemas(
+  detail: TmdbDetailResponse,
+  mediaType: MediaType,
+  preferredRegion: WatchProviderRegion,
+): { inCinemas: boolean; region: WatchProviderRegion | null } {
+  if (mediaType !== "movie") {
+    return { inCinemas: false, region: null };
+  }
+
+  const results = detail.release_dates?.results;
+  if (!results?.length) {
+    return { inCinemas: false, region: null };
+  }
+
+  const preferred =
+    results.find((entry) => entry.iso_3166_1 === preferredRegion) ||
+    results.find((entry) => entry.iso_3166_1 === DEFAULT_PROVIDER_REGION) ||
+    results[0];
+  const region = preferred?.iso_3166_1 || null;
+  if (!preferred?.release_dates?.length || !region) {
+    return { inCinemas: false, region: null };
+  }
+
+  const today = startOfUtcDay(new Date());
+  const windowMs = THEATRICAL_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+
+  const inCinemas = preferred.release_dates.some((release) => {
+    if (!release.type || !THEATRICAL_RELEASE_TYPES.has(release.type)) {
+      return false;
+    }
+    const releaseDay = parseReleaseDay(release.release_date);
+    if (!releaseDay) return false;
+    const releasedAt = startOfUtcDay(releaseDay);
+    if (releasedAt > today) return false;
+    return today - releasedAt <= windowMs;
+  });
+
+  return { inCinemas, region: inCinemas ? region : null };
 }
 
 function mapProviders(
@@ -214,7 +288,14 @@ function mapDetail(
       ? (detail.runtime ?? null)
       : (detail.episode_run_time?.[0] ?? detail.runtime ?? null);
 
-  const { providers, providersRegion } = mapProviders(detail, preferredRegion);
+  const { inCinemas, region: cinemaRegion } = isInCinemas(
+    detail,
+    mediaType,
+    preferredRegion,
+  );
+  const { providers, providersRegion } = inCinemas
+    ? { providers: [] as WatchProvider[], providersRegion: cinemaRegion }
+    : mapProviders(detail, preferredRegion);
 
   return {
     id: detail.id,
@@ -236,6 +317,7 @@ function mapDetail(
     cast,
     providers,
     providersRegion,
+    inCinemas,
     director,
     creators,
     trailers: mapTrailers(detail),
@@ -284,7 +366,7 @@ export async function GET(request: NextRequest) {
   try {
     const videoLanguage = `${locale},en,null`;
     const response = await fetch(
-      `https://api.themoviedb.org/3/${typeParam}/${id}?language=${language}&append_to_response=credits,watch/providers,videos&include_video_language=${videoLanguage}`,
+      `https://api.themoviedb.org/3/${typeParam}/${id}?language=${language}&append_to_response=credits,watch/providers,videos,release_dates&include_video_language=${videoLanguage}`,
       {
         headers: { Authorization: `Bearer ${token}` },
         next: { revalidate: 3600 },

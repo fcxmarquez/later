@@ -45,6 +45,8 @@ export type MediaDetail = MediaItem & {
   cast: CastMember[];
   providers: WatchProvider[];
   providersRegion?: WatchProviderRegion | null;
+  /** True when the title is currently in theatrical release for the resolved region. */
+  inCinemas?: boolean;
   director?: string | null;
   creators?: string[];
   trailers: MediaTrailer[];
