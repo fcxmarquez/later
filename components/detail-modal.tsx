@@ -24,6 +24,16 @@ function formatRuntime(minutes?: number | null) {
   return rest ? `${hours} h ${rest} min` : `${hours} h`;
 }
 
+function formatRegionName(region: string, locale: string) {
+  try {
+    return (
+      new Intl.DisplayNames([locale], { type: "region" }).of(region) || region
+    );
+  } catch {
+    return region;
+  }
+}
+
 function initials(name: string) {
   return name
     .split(/\s+/)
@@ -811,7 +821,10 @@ export function DetailModal({
               </h3>
               <p className="mt-2 text-sm text-zinc-500">
                 {t("whereToWatchHint", {
-                  region: view.providersRegion || "MX",
+                  regionName: formatRegionName(
+                    view.providersRegion || "US",
+                    locale,
+                  ),
                 })}
               </p>
               <ul className="mt-5 flex gap-4 overflow-x-auto pb-2">

@@ -25,7 +25,8 @@ export type WatchProvider = {
   logoPath: string;
 };
 
-export type WatchProviderRegion = "MX" | "US";
+/** ISO 3166-1 alpha-2 country code used for TMDB watch providers. */
+export type WatchProviderRegion = string;
 
 export type MediaTrailer = {
   id: string;
