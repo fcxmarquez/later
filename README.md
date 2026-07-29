@@ -1,8 +1,8 @@
 # Later
 
-Una watchlist cinematográfica privada para guardar películas y series, construida con Next.js, Tailwind CSS, Zustand, Neon Auth y Postgres.
+A private movie and TV watchlist built with Next.js, Tailwind CSS, Zustand, Neon Auth, and Postgres.
 
-## Desarrollo
+## Development
 
 ```bash
 pnpm install
@@ -10,45 +10,48 @@ cp .env.example .env.local
 pnpm run dev
 ```
 
-Configura `DATABASE_URL` con la conexión agrupada (`pooler`) de Neon, `DATABASE_URL_UNPOOLED` con la URL directa (sin `-pooler`, usada por migraciones), `NEON_AUTH_BASE_URL` con la URL de Auth de la rama, genera `NEON_AUTH_COOKIE_SECRET` con `openssl rand -base64 32` y define la cuenta privada permitida en `AUTH_ALLOWED_EMAIL`. Para conectar el catálogo real, añade un token de lectura de TMDB a `TMDB_API_TOKEN`; sin él se usa el catálogo de demostración.
+Set `DATABASE_URL` to Neon’s pooled connection, `DATABASE_URL_UNPOOLED` to the direct URL (without `-pooler`, used by migrations), `NEON_AUTH_BASE_URL` to the branch Auth URL, generate `NEON_AUTH_COOKIE_SECRET` with `openssl rand -base64 32`, and set the allowed private account in `AUTH_ALLOWED_EMAIL`. To connect the live catalog, add a TMDB read token as `TMDB_API_TOKEN`; without it the demo catalog is used.
 
-Puedes usar la app como invitado sin iniciar sesión: en ese modo la watchlist se guarda en LocalStorage del navegador. La sincronización en la nube (Neon Auth + Postgres) está limitada a la cuenta configurada de forma privada en el servidor. Los usuarios y las sesiones se almacenan en el esquema administrado `neon_auth`; la lista autenticada y el estado visto/pendiente viven en `public.watchlist_items`, relacionados por el ID del usuario. El cliente conserva actualizaciones optimistas y, al iniciar sesión, migra una sola vez los datos de LocalStorage a Postgres.
+You can use the app as a guest without signing in: in that mode the watchlist is stored in the browser’s LocalStorage. Cloud sync (Neon Auth + Postgres) is limited to the account configured privately on the server. Users and sessions live in the managed `neon_auth` schema; the authenticated list and watched/pending state live in `public.watchlist_items`, keyed by user ID. The client keeps optimistic updates and, on sign-in, migrates LocalStorage data to Postgres once.
 
-El esquema Postgres se define con Drizzle en `db/schema.ts`. Tras cambiar el schema:
+The Postgres schema is defined with Drizzle in `db/schema.ts`. After changing the schema:
 
-1. Genera una migración con `pnpm run db:generate`.
-2. Revisa el SQL generado y no edites migraciones que ya se aplicaron.
-3. Valida el historial con `pnpm run db:check` y confirma que el schema esté
-   sincronizado con `pnpm run db:check:drift`.
-4. Aplica las migraciones pendientes en desarrollo con `pnpm run db:migrate`.
+1. Generate a migration with `pnpm run db:generate`.
+2. Review the generated SQL and do not edit migrations that have already been applied.
+3. Validate the history with `pnpm run db:check` and confirm the schema is
+   in sync with `pnpm run db:check:drift`.
+4. Apply pending migrations in development with `pnpm run db:migrate`.
 
-Las migraciones no se generan al iniciar la app ni al ejecutar `pnpm run build`; solo se aplican archivos SQL ya versionados. Vercel ejecuta `pnpm run db:migrate:vercel` como paso explícito antes del build. En producción exige una conexión directa mediante `DATABASE_URL_UNPOOLED`; en Preview migra la base aislada cuando la integración de Neon proporciona sus variables, o conserva el modo invitado si no hay base configurada. El runner serializa despliegues concurrentes con un advisory lock de Postgres y Drizzle aplica cada lote pendiente dentro de una transacción.
+Migrations are not generated when the app starts or when you run `pnpm run build`; only already-versioned SQL files are applied. Vercel runs `pnpm run db:migrate:vercel` as an explicit step before the build. Production requires a direct connection via `DATABASE_URL_UNPOOLED`; Preview migrates the isolated database when the Neon integration provides its variables, or keeps guest mode if no database is configured. The runner serializes concurrent deploys with a Postgres advisory lock, and Drizzle applies each pending batch inside a transaction.
 
-`db/migrations/001_create_watchlist_items.sql` se conserva sin cambios como historial del flujo manual anterior. Drizzle solo ejecuta las migraciones registradas en `db/migrations/meta/_journal.json`.
+`db/migrations/001_create_watchlist_items.sql` is kept unchanged as history from the previous manual flow. Drizzle only runs migrations registered in `db/migrations/meta/_journal.json`.
+
+## Internationalization
+
+The UI supports English and Spanish via route prefixes (`/en`, `/es`). English is the default fallback. The initial locale follows the browser `Accept-Language` header; the choice is persisted in the `NEXT_LOCALE` cookie. Switch languages from the profile menu.
 
 ## CI
 
-GitHub Actions ejecuta formato, lint, typecheck, consistencia de migraciones,
-sincronización entre `db/schema.ts` y los artefactos generados, y build en cada
-pull request y push a `main`. El check de drift ejecuta Drizzle sobre una copia
-temporal del historial y falla si `pnpm run db:generate` produciría cambios. En
-pull requests también rechaza cambios, renombres o eliminaciones de SQL de
-migraciones o snapshots existentes y solo permite añadir entradas al journal:
-las correcciones deben ir en una migración nueva. Un segundo job levanta un
-Postgres 16 desechable, aplica todo el historial dos veces y comprueba los
-hashes del ledger, la llave foránea, el CRUD real de la watchlist y el borrado
-en cascada (workflow `.github/workflows/ci.yml`, checks `CI / ci` y
-`CI / migrations`).
+GitHub Actions runs formatting, lint, typecheck, migration consistency,
+sync between `db/schema.ts` and generated artifacts, and the build on every
+pull request and push to `main`. The drift check runs Drizzle against a
+temporary copy of the history and fails if `pnpm run db:generate` would
+produce changes. On pull requests it also rejects changes, renames, or
+deletions of existing migration SQL or snapshots and only allows new journal
+entries: fixes must land in a new migration. A second job spins up a disposable
+Postgres 16, applies the full history twice, and checks ledger hashes, the
+foreign key, real watchlist CRUD, and cascade deletes (workflow
+`.github/workflows/ci.yml`, checks `CI / ci` and `CI / migrations`).
 
-Para bloquear merges a `main` hasta que pase el check (requiere admin del repo; en repos privados personales también GitHub Pro):
+To block merges to `main` until checks pass (requires repo admin; on personal private repos also GitHub Pro):
 
-1. Settings → Branches → Add branch protection rule (o Rules → Rulesets)
+1. Settings → Branches → Add branch protection rule (or Rules → Rulesets)
 2. Branch name pattern: `main`
-3. Activa **Require status checks to pass before merging**
-4. Busca y selecciona `CI / ci` y `CI / migrations`
-5. Recomendado: **Require branches to be up to date before merging**
+3. Enable **Require status checks to pass before merging**
+4. Find and select `CI / ci` and `CI / migrations`
+5. Recommended: **Require branches to be up to date before merging**
 
-Con la CLI (sustituye el owner/repo si hace falta):
+With the CLI (replace owner/repo if needed):
 
 ```bash
 gh api -X PUT repos/fcxmarquez/later/branches/main/protection \
@@ -68,4 +71,4 @@ gh api -X PUT repos/fcxmarquez/later/branches/main/protection \
 EOF
 ```
 
-El check solo aparece en la lista después de que el workflow haya corrido al menos una vez en el repo.
+The check only appears in the list after the workflow has run at least once in the repo.
