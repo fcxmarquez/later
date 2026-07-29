@@ -1,4 +1,4 @@
-import { MediaDetail, MediaItem } from "./types";
+import { MediaDetail, MediaItem, MediaTrailer } from "./types";
 
 export const imageUrl = (
   path: string,
@@ -13,6 +13,27 @@ export const imageUrl = (
   } as const;
   return `https://image.tmdb.org/t/p/${sizeMap[size]}${path}`;
 };
+
+export const youtubeThumbUrl = (key: string) =>
+  `https://i.ytimg.com/vi/${key}/hqdefault.jpg`;
+
+export const youtubeEmbedUrl = (key: string) =>
+  `https://www.youtube-nocookie.com/embed/${key}?autoplay=1&rel=0`;
+
+function demoTrailer(
+  key: string,
+  name: string,
+  type: MediaTrailer["type"] = "Trailer",
+): MediaTrailer {
+  return {
+    id: key,
+    key,
+    name,
+    site: "YouTube",
+    type,
+    official: true,
+  };
+}
 
 export const featured: MediaItem = {
   id: 157336,
@@ -127,6 +148,10 @@ const demoDetails: Record<string, MediaDetail> = {
         logoPath: "/SPnB1qiCkYfirS2it3hZORwGVn.jpg",
       },
     ],
+    trailers: [
+      demoTrailer("zSWdZVtXT7E", "Interstellar - Official Trailer"),
+      demoTrailer("Lm8p5rlrP6I", "Interstellar - Trailer 3", "Teaser"),
+    ],
   },
   "tv-1399": {
     id: 1399,
@@ -216,6 +241,9 @@ const demoDetails: Record<string, MediaDetail> = {
         logoPath: "/qR6FKvnPBx2O37FDg8PNM7efwF3.jpg",
       },
     ],
+    trailers: [
+      demoTrailer("KPLWWIOCOOQ", "Game of Thrones | Official Trailer"),
+    ],
   },
   "tv-66732": {
     id: 66732,
@@ -294,6 +322,9 @@ const demoDetails: Record<string, MediaDetail> = {
         name: "Netflix Standard with Ads",
         logoPath: "/dpR8r13zWDeUR0QkzWidrdMxa56.jpg",
       },
+    ],
+    trailers: [
+      demoTrailer("b9EkMc79ZSU", "Stranger Things | Official Trailer"),
     ],
   },
   "movie-693134": {
@@ -393,6 +424,7 @@ const demoDetails: Record<string, MediaDetail> = {
         logoPath: "/bZvc9dXrXNly7cA0V4D9pR8yJwm.jpg",
       },
     ],
+    trailers: [demoTrailer("Way9Dexny3w", "Dune: Part Two | Official Trailer")],
   },
   "tv-100088": {
     id: 100088,
@@ -458,6 +490,7 @@ const demoDetails: Record<string, MediaDetail> = {
         logoPath: "/qR6FKvnPBx2O37FDg8PNM7efwF3.jpg",
       },
     ],
+    trailers: [demoTrailer("uLtkt8Bon3E", "The Last of Us | Official Trailer")],
   },
   "movie-155": {
     id: 155,
@@ -556,6 +589,9 @@ const demoDetails: Record<string, MediaDetail> = {
         logoPath: "/8aBqoNeGGr0oSA85iopgNZUOTOc.jpg",
       },
     ],
+    trailers: [
+      demoTrailer("EXeTwQWrcwY", "The Dark Knight | Official Trailer"),
+    ],
   },
   "tv-94997": {
     id: 94997,
@@ -640,6 +676,9 @@ const demoDetails: Record<string, MediaDetail> = {
         logoPath: "/embS4GPK7c8pjbuY2O2irV5rYch.jpg",
       },
     ],
+    trailers: [
+      demoTrailer("DotnJ7tTA34", "House of the Dragon | Official Trailer"),
+    ],
   },
 };
 
@@ -680,5 +719,6 @@ export function getFallbackDetail(item: MediaItem): MediaDetail {
     status: null,
     director: null,
     creators: [],
+    trailers: [],
   };
 }

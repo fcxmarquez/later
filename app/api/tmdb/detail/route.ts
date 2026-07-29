@@ -5,6 +5,7 @@ import type {
   CastMember,
   MediaDetail,
   MediaItem,
+  MediaTrailer,
   MediaType,
   WatchProvider,
 } from "@/lib/types";
@@ -48,6 +49,15 @@ type TmdbWatchProviders = {
     }
   >;
 };
+type TmdbVideo = {
+  id: string;
+  key?: string;
+  name?: string;
+  site?: string;
+  type?: string;
+  official?: boolean;
+  published_at?: string;
+};
 
 type TmdbDetailResponse = {
   id: number;
@@ -68,6 +78,7 @@ type TmdbDetailResponse = {
   created_by?: TmdbCreatedBy[];
   credits?: { cast?: TmdbCast[]; crew?: TmdbCrew[] };
   "watch/providers"?: TmdbWatchProviders;
+  videos?: { results?: TmdbVideo[] };
 };
 
 function isMediaType(value: string | null): value is MediaType {
@@ -131,6 +142,34 @@ function mapProviders(detail: TmdbDetailResponse): {
   return { providers, providersRegion };
 }
 
+function trailerRank(video: MediaTrailer) {
+  const typeScore = video.type === "Trailer" ? 0 : 1;
+  const officialScore = video.official ? 0 : 1;
+  return typeScore * 10 + officialScore;
+}
+
+function mapTrailers(detail: TmdbDetailResponse): MediaTrailer[] {
+  const seen = new Set<string>();
+  const trailers: MediaTrailer[] = [];
+
+  for (const video of detail.videos?.results || []) {
+    if (video.site !== "YouTube" || !video.key) continue;
+    if (video.type !== "Trailer" && video.type !== "Teaser") continue;
+    if (seen.has(video.key)) continue;
+    seen.add(video.key);
+    trailers.push({
+      id: video.id || video.key,
+      key: video.key,
+      name: video.name?.trim() || video.type,
+      site: "YouTube",
+      type: video.type,
+      official: Boolean(video.official),
+    });
+  }
+
+  return trailers.sort((a, b) => trailerRank(a) - trailerRank(b)).slice(0, 6);
+}
+
 function mapDetail(
   detail: TmdbDetailResponse,
   mediaType: MediaType,
@@ -180,6 +219,7 @@ function mapDetail(
     providersRegion,
     director,
     creators,
+    trailers: mapTrailers(detail),
   };
 }
 
@@ -222,8 +262,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const videoLanguage = `${locale},en,null`;
     const response = await fetch(
-      `https://api.themoviedb.org/3/${typeParam}/${id}?language=${language}&append_to_response=credits,watch/providers`,
+      `https://api.themoviedb.org/3/${typeParam}/${id}?language=${language}&append_to_response=credits,watch/providers,videos&include_video_language=${videoLanguage}`,
       {
         headers: { Authorization: `Bearer ${token}` },
         next: { revalidate: 3600 },

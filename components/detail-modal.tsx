@@ -3,12 +3,13 @@
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState, type SyntheticEvent } from "react";
-import { Check, ChevronDown, Eye, Plus, X } from "lucide-react";
-import { imageUrl } from "@/lib/catalog";
+import { Check, ChevronDown, Eye, Play, Plus, X } from "lucide-react";
+import { imageUrl, youtubeEmbedUrl, youtubeThumbUrl } from "@/lib/catalog";
 import type {
   CastMember,
   MediaDetail,
   MediaItem,
+  MediaTrailer,
   WatchProvider,
 } from "@/lib/types";
 import { useWatchlist } from "@/store/watchlist";
@@ -44,6 +45,7 @@ function mergeDetail(item: MediaItem, detail: MediaDetail | null): MediaDetail {
       status: null,
       director: null,
       creators: [],
+      trailers: [],
     };
   }
   return {
@@ -110,6 +112,56 @@ function CastCard({ member }: { member: CastMember }) {
         {member.name}
       </p>
       <p className="truncate text-xs text-zinc-500">{member.character}</p>
+    </li>
+  );
+}
+
+function TrailerCard({ trailer }: { trailer: MediaTrailer }) {
+  const t = useTranslations("Detail");
+  const [playing, setPlaying] = useState(false);
+  const [thumbFailed, setThumbFailed] = useState(false);
+
+  return (
+    <li className="w-[min(100%,20rem)] shrink-0 sm:w-[22rem]">
+      <div className="relative aspect-video overflow-hidden rounded-2xl bg-zinc-900 ring-1 ring-white/10">
+        {playing ? (
+          <iframe
+            src={youtubeEmbedUrl(trailer.key)}
+            title={trailer.name}
+            className="absolute inset-0 size-full border-0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setPlaying(true)}
+            className="group absolute inset-0 grid place-items-center"
+            aria-label={t("playTrailer", { name: trailer.name })}
+          >
+            {!thumbFailed ? (
+              <Image
+                src={youtubeThumbUrl(trailer.key)}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 90vw, 352px"
+                className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                onError={() => setThumbFailed(true)}
+              />
+            ) : (
+              <span className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-950" />
+            )}
+            <span className="absolute inset-0 bg-black/35 transition group-hover:bg-black/25" />
+            <span className="relative grid size-14 place-items-center rounded-full bg-white text-black shadow-[0_12px_40px_rgba(0,0,0,.45)] transition group-hover:scale-105 sm:size-16">
+              <Play size={26} fill="currentColor" className="ml-0.5" />
+            </span>
+          </button>
+        )}
+      </div>
+      <p className="mt-3 truncate text-sm font-medium text-zinc-100">
+        {trailer.name}
+      </p>
+      <p className="truncate text-xs text-zinc-500">{trailer.type}</p>
     </li>
   );
 }
@@ -522,6 +574,19 @@ export function DetailModal({
               <ul className="hide-scrollbar mt-5 flex gap-4 overflow-x-auto pb-4">
                 {view.cast.map((member) => (
                   <CastCard key={member.id} member={member} />
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {view.trailers.length > 0 && (
+            <section className="detail-stagger">
+              <h3 className="text-xs font-bold tracking-[0.28em] text-zinc-500 uppercase">
+                {t("trailers")}
+              </h3>
+              <ul className="hide-scrollbar mt-5 flex gap-4 overflow-x-auto pb-4">
+                {view.trailers.map((trailer) => (
+                  <TrailerCard key={trailer.id} trailer={trailer} />
                 ))}
               </ul>
             </section>
