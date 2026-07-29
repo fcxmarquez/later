@@ -121,6 +121,31 @@ input {
 .detail-overlay.is-shown .detail-stagger:nth-child(6) {
   animation-delay: 440ms;
 }
+.trailer-lightbox {
+  --trailer-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+.trailer-lightbox-dim {
+  opacity: 0;
+  transition: opacity 420ms var(--trailer-ease);
+}
+.trailer-lightbox.is-shown .trailer-lightbox-dim {
+  opacity: 1;
+}
+.trailer-lightbox.is-exit .trailer-lightbox-dim {
+  opacity: 0;
+  transition-duration: 320ms;
+}
+.trailer-lightbox-frame {
+  transform-origin: center center;
+  will-change: transform;
+  transition:
+    transform 520ms var(--trailer-ease),
+    border-radius 520ms var(--trailer-ease);
+}
+.trailer-lightbox.is-exit .trailer-lightbox-frame {
+  transition-duration: 360ms;
+  transition-timing-function: ease-in;
+}
 @keyframes detail-panel-in {
   from {
     opacity: 0;
@@ -158,6 +183,8 @@ input {
   .detail-hero-copy,
   .detail-stagger,
   .detail-overview-text,
+  .trailer-lightbox-dim,
+  .trailer-lightbox-frame,
   .profile-menu {
     animation: none !important;
     transition: none !important;

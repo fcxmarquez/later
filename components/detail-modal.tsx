@@ -116,14 +116,258 @@ function CastCard({ member }: { member: CastMember }) {
   );
 }
 
-function TrailerCard({ trailer }: { trailer: MediaTrailer }) {
+type TrailerOrigin = {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+};
+
+type TrailerPlayerState = {
+  trailer: MediaTrailer;
+  origin: TrailerOrigin;
+};
+
+function prefersReducedMotion() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function getCenteredTrailerRect(): TrailerOrigin {
+  const maxWidth = Math.min(window.innerWidth * 0.92, 960);
+  const maxHeight = window.innerHeight * 0.78;
+  let width = maxWidth;
+  let height = (width * 9) / 16;
+  if (height > maxHeight) {
+    height = maxHeight;
+    width = (height * 16) / 9;
+  }
+  return {
+    top: (window.innerHeight - height) / 2,
+    left: (window.innerWidth - width) / 2,
+    width,
+    height,
+  };
+}
+
+function getFlipTransform(origin: TrailerOrigin, target: TrailerOrigin) {
+  const scaleX = origin.width / target.width;
+  const scaleY = origin.height / target.height;
+  const originCenterX = origin.left + origin.width / 2;
+  const originCenterY = origin.top + origin.height / 2;
+  const targetCenterX = target.left + target.width / 2;
+  const targetCenterY = target.top + target.height / 2;
+  const translateX = originCenterX - targetCenterX;
+  const translateY = originCenterY - targetCenterY;
+  return `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`;
+}
+
+function TrailerCard({
+  trailer,
+  onPlay,
+}: {
+  trailer: MediaTrailer;
+  onPlay: (trailer: MediaTrailer, origin: TrailerOrigin) => void;
+}) {
   const t = useTranslations("Detail");
-  const [playing, setPlaying] = useState(false);
+  const frameRef = useRef<HTMLDivElement>(null);
   const [thumbFailed, setThumbFailed] = useState(false);
 
   return (
     <li className="w-[min(100%,20rem)] shrink-0 sm:w-[22rem]">
-      <div className="relative aspect-video overflow-hidden rounded-2xl bg-zinc-900 ring-1 ring-white/10">
+      <div
+        ref={frameRef}
+        className="relative aspect-video overflow-hidden rounded-2xl bg-zinc-900 ring-1 ring-white/10"
+      >
+        <button
+          type="button"
+          onClick={() => {
+            const rect = frameRef.current?.getBoundingClientRect();
+            if (!rect) return;
+            onPlay(trailer, {
+              top: rect.top,
+              left: rect.left,
+              width: rect.width,
+              height: rect.height,
+            });
+          }}
+          className="group absolute inset-0 grid place-items-center"
+          aria-label={t("playTrailer", { name: trailer.name })}
+        >
+          {!thumbFailed ? (
+            <Image
+              src={youtubeThumbUrl(trailer.key)}
+              alt=""
+              fill
+              sizes="(max-width: 640px) 90vw, 352px"
+              className="object-cover transition duration-500 group-hover:scale-[1.03]"
+              onError={() => setThumbFailed(true)}
+            />
+          ) : (
+            <span className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-950" />
+          )}
+          <span className="absolute inset-0 bg-black/35 transition group-hover:bg-black/25" />
+          <span className="relative grid size-14 place-items-center rounded-full bg-white text-black shadow-[0_12px_40px_rgba(0,0,0,.45)] transition group-hover:scale-105 sm:size-16">
+            <Play size={26} fill="currentColor" className="ml-0.5" />
+          </span>
+        </button>
+      </div>
+      <p className="mt-3 truncate text-sm font-medium text-zinc-100">
+        {trailer.name}
+      </p>
+      <p className="truncate text-xs text-zinc-500">{trailer.type}</p>
+    </li>
+  );
+}
+
+function TrailerLightbox({
+  trailer,
+  origin,
+  onClosed,
+}: {
+  trailer: MediaTrailer;
+  origin: TrailerOrigin;
+  onClosed: () => void;
+}) {
+  const t = useTranslations("Detail");
+  const [layout] = useState(() => {
+    const target = getCenteredTrailerRect();
+    const reducedMotion = prefersReducedMotion();
+    return {
+      target,
+      reducedMotion,
+      phase: (reducedMotion ? "shown" : "enter") as "enter" | "shown" | "exit",
+      transform: reducedMotion ? "none" : getFlipTransform(origin, target),
+      playing: reducedMotion,
+    };
+  });
+  const phaseRef = useRef<"enter" | "shown" | "exit">(layout.phase);
+  const targetRef = useRef<TrailerOrigin>(layout.target);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const onClosedRef = useRef(onClosed);
+  const originRef = useRef(origin);
+  const [phase, setPhase] = useState<"enter" | "shown" | "exit">(layout.phase);
+  const [target, setTarget] = useState<TrailerOrigin>(layout.target);
+  const [transform, setTransform] = useState(layout.transform);
+  const [playing, setPlaying] = useState(layout.playing);
+  const [thumbFailed, setThumbFailed] = useState(false);
+
+  useEffect(() => {
+    onClosedRef.current = onClosed;
+  }, [onClosed]);
+
+  useEffect(() => {
+    originRef.current = origin;
+  }, [origin]);
+
+  const requestClose = () => {
+    if (phaseRef.current === "exit") return;
+    phaseRef.current = "exit";
+    setPlaying(false);
+    setPhase("exit");
+    if (layout.reducedMotion) {
+      onClosedRef.current();
+      return;
+    }
+    setTransform(getFlipTransform(originRef.current, targetRef.current));
+  };
+
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (phaseRef.current === "exit") return;
+        phaseRef.current = "exit";
+        setPlaying(false);
+        setPhase("exit");
+        if (layout.reducedMotion) {
+          onClosedRef.current();
+          return;
+        }
+        setTransform(getFlipTransform(originRef.current, targetRef.current));
+        return;
+      }
+      if (event.key === "Tab") {
+        event.preventDefault();
+        closeButtonRef.current?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown, true);
+
+    if (layout.reducedMotion) {
+      return () => window.removeEventListener("keydown", handleKeyDown, true);
+    }
+
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        phaseRef.current = "shown";
+        setPhase("shown");
+        setTransform("none");
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", handleKeyDown, true);
+    };
+  }, [layout.reducedMotion]);
+
+  useEffect(() => {
+    const onResize = () => {
+      const next = getCenteredTrailerRect();
+      targetRef.current = next;
+      setTarget(next);
+      if (phaseRef.current === "exit") {
+        setTransform(getFlipTransform(originRef.current, next));
+      }
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  return (
+    <div
+      className={`trailer-lightbox fixed inset-0 z-[70] ${phase === "enter" ? "is-enter" : ""} ${phase === "shown" ? "is-shown" : ""} ${phase === "exit" ? "is-exit" : ""}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label={trailer.name}
+      onClick={requestClose}
+    >
+      <div className="trailer-lightbox-dim absolute inset-0 bg-black/80 backdrop-blur-[2px]" />
+      <button
+        ref={closeButtonRef}
+        type="button"
+        onClick={requestClose}
+        className="glass absolute top-5 right-5 z-20 grid size-11 place-items-center rounded-full transition hover:bg-white hover:text-black sm:top-7 sm:right-8"
+        aria-label={t("closeTrailer")}
+      >
+        <X />
+      </button>
+      <div
+        className="trailer-lightbox-frame absolute overflow-hidden rounded-2xl bg-zinc-950 shadow-[0_28px_90px_rgba(0,0,0,.6)] ring-1 ring-white/15"
+        style={{
+          top: target.top,
+          left: target.left,
+          width: target.width,
+          height: target.height,
+          transform,
+          borderRadius: phase === "shown" ? "1.25rem" : "1rem",
+        }}
+        onClick={(event) => event.stopPropagation()}
+        onTransitionEnd={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (event.propertyName !== "transform") return;
+          if (phaseRef.current === "shown" && !playing) {
+            setPlaying(true);
+            return;
+          }
+          if (phaseRef.current === "exit") onClosedRef.current();
+        }}
+      >
         {playing ? (
           <iframe
             src={youtubeEmbedUrl(trailer.key)}
@@ -133,36 +377,30 @@ function TrailerCard({ trailer }: { trailer: MediaTrailer }) {
             allowFullScreen
           />
         ) : (
-          <button
-            type="button"
-            onClick={() => setPlaying(true)}
-            className="group absolute inset-0 grid place-items-center"
-            aria-label={t("playTrailer", { name: trailer.name })}
-          >
+          <>
             {!thumbFailed ? (
               <Image
                 src={youtubeThumbUrl(trailer.key)}
                 alt=""
                 fill
-                sizes="(max-width: 640px) 90vw, 352px"
-                className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                sizes="92vw"
+                className="object-cover"
                 onError={() => setThumbFailed(true)}
+                priority
               />
             ) : (
               <span className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-950" />
             )}
-            <span className="absolute inset-0 bg-black/35 transition group-hover:bg-black/25" />
-            <span className="relative grid size-14 place-items-center rounded-full bg-white text-black shadow-[0_12px_40px_rgba(0,0,0,.45)] transition group-hover:scale-105 sm:size-16">
-              <Play size={26} fill="currentColor" className="ml-0.5" />
+            <span className="absolute inset-0 bg-black/25" />
+            <span className="absolute inset-0 grid place-items-center">
+              <span className="grid size-14 place-items-center rounded-full bg-white/90 text-black sm:size-16">
+                <Play size={26} fill="currentColor" className="ml-0.5" />
+              </span>
             </span>
-          </button>
+          </>
         )}
       </div>
-      <p className="mt-3 truncate text-sm font-medium text-zinc-100">
-        {trailer.name}
-      </p>
-      <p className="truncate text-xs text-zinc-500">{trailer.type}</p>
-    </li>
+    </div>
   );
 }
 
@@ -327,6 +565,14 @@ export function DetailModal({
   const [phase, setPhase] = useState<"enter" | "shown" | "exit">("enter");
   const [detail, setDetail] = useState<MediaDetail | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [trailerPlayer, setTrailerPlayer] = useState<TrailerPlayerState | null>(
+    null,
+  );
+  const trailerPlayerRef = useRef<TrailerPlayerState | null>(null);
+
+  useEffect(() => {
+    trailerPlayerRef.current = trailerPlayer;
+  }, [trailerPlayer]);
 
   const view = mergeDetail(item, detail);
   const runtimeLabel = formatRuntime(view.runtime);
@@ -382,6 +628,7 @@ export function DetailModal({
     closeButtonRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (trailerPlayerRef.current) return;
       if (event.key === "Escape") {
         requestClose();
         return;
@@ -586,13 +833,28 @@ export function DetailModal({
               </h3>
               <ul className="hide-scrollbar mt-5 flex gap-4 overflow-x-auto pb-4">
                 {view.trailers.map((trailer) => (
-                  <TrailerCard key={trailer.id} trailer={trailer} />
+                  <TrailerCard
+                    key={trailer.id}
+                    trailer={trailer}
+                    onPlay={(nextTrailer, origin) =>
+                      setTrailerPlayer({ trailer: nextTrailer, origin })
+                    }
+                  />
                 ))}
               </ul>
             </section>
           )}
         </div>
       </section>
+
+      {trailerPlayer && (
+        <TrailerLightbox
+          key={trailerPlayer.trailer.id}
+          trailer={trailerPlayer.trailer}
+          origin={trailerPlayer.origin}
+          onClosed={() => setTrailerPlayer(null)}
+        />
+      )}
     </div>
   );
 }

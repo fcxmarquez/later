@@ -88,7 +88,8 @@
     "whereToWatchHint": "Availability in {region, select, MX {Mexico} US {USA} other {Mexico}} (streaming, rent, or buy).",
     "cast": "Cast",
     "trailers": "Trailers",
-    "playTrailer": "Play trailer: {name}"
+    "playTrailer": "Play trailer: {name}",
+    "closeTrailer": "Close trailer"
   },
   "WatchlistErrors": {
     "addFailed": "We couldn't add the title. Please try again.",

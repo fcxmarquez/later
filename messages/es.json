@@ -88,7 +88,8 @@
     "whereToWatchHint": "Disponibilidad en {region, select, MX {México} US {EE. UU.} other {México}} (streaming, alquiler o compra).",
     "cast": "Reparto",
     "trailers": "Tráilers",
-    "playTrailer": "Reproducir tráiler: {name}"
+    "playTrailer": "Reproducir tráiler: {name}",
+    "closeTrailer": "Cerrar tráiler"
   },
   "WatchlistErrors": {
     "addFailed": "No pudimos añadir el título. Inténtalo de nuevo.",
