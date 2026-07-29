@@ -19,6 +19,7 @@ import {
   GUEST_WATCHLIST_KEY,
   isSavedMedia,
 } from "@/lib/guest-storage";
+import { HOME_SECTION_IDS, type HomeSection } from "@/lib/tmdb";
 import type { MediaItem, SavedMedia } from "@/lib/types";
 import { type WatchlistMode, useWatchlist } from "@/store/watchlist";
 import { DetailModal } from "./detail-modal";
@@ -46,7 +47,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
   const tErrors = useTranslations("WatchlistErrors");
   const locale = useLocale();
   const [view, setView] = useState<View>("home");
-  const [homeCatalog, setHomeCatalog] = useState<MediaItem[]>([]);
+  const [homeSections, setHomeSections] = useState<HomeSection[]>([]);
   const [loadedHomeLocale, setLoadedHomeLocale] = useState<string | null>(null);
   const [homeError, setHomeError] = useState(false);
   const [searchResults, setSearchResults] = useState<MediaItem[]>([]);
@@ -68,7 +69,10 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
   const initialize = useWatchlist((state) => state.initialize);
   const error = useWatchlist((state) => state.error);
   const clearError = useWatchlist((state) => state.clearError);
-  const featured = homeCatalog[0] ?? null;
+  const featured =
+    homeSections.find((section) => section.id === "trending")?.results[0] ??
+    homeSections[0]?.results[0] ??
+    null;
   const hasFeatured = useWatchlist((state) =>
     featured ? state.has(featured) : false,
   );
@@ -107,22 +111,26 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
   }, [initialWatchlist, initialize, isGuest, mode]);
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`/api/tmdb?locale=${encodeURIComponent(locale)}`, {
+    fetch(`/api/tmdb/home?locale=${encodeURIComponent(locale)}`, {
       signal: controller.signal,
     })
       .then(async (res) => {
         if (!res.ok) throw new Error("catalog failed");
         return res.json();
       })
-      .then((data) => {
-        setHomeCatalog(data.results ?? []);
+      .then((data: { sections?: HomeSection[] }) => {
+        const sections = (data.sections ?? []).filter(
+          (section) =>
+            HOME_SECTION_IDS.includes(section.id) && section.results.length > 0,
+        );
+        setHomeSections(sections);
         setHomeError(false);
         setLoadedHomeLocale(locale);
       })
       .catch((fetchError) => {
         if (fetchError.name === "AbortError") return;
         setHomeError(true);
-        setHomeCatalog([]);
+        setHomeSections([]);
         setLoadedHomeLocale(locale);
       });
     return () => controller.abort();
@@ -224,14 +232,13 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
           {isHomeLoading ? (
             <>
               <FeaturedHeroSkeleton />
-              <MediaRowSkeleton
-                title={tHome("trendingTitle")}
-                subtitle={tHome("trendingSubtitle")}
-              />
-              <MediaRowSkeleton
-                title={tHome("epicTitle")}
-                subtitle={tHome("epicSubtitle")}
-              />
+              {HOME_SECTION_IDS.map((sectionId) => (
+                <MediaRowSkeleton
+                  key={sectionId}
+                  title={tHome(`sections.${sectionId}.title`)}
+                  subtitle={tHome(`sections.${sectionId}.subtitle`)}
+                />
+              ))}
             </>
           ) : homeError ? (
             <section className="flex min-h-[70vh] flex-col items-center justify-center px-5 text-center sm:px-10">
@@ -299,18 +306,15 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
                   </div>
                 </div>
               </section>
-              <MediaRow
-                title={tHome("trendingTitle")}
-                subtitle={tHome("trendingSubtitle")}
-                items={homeCatalog}
-                open={setSelected}
-              />
-              <MediaRow
-                title={tHome("epicTitle")}
-                subtitle={tHome("epicSubtitle")}
-                items={[...homeCatalog].reverse()}
-                open={setSelected}
-              />
+              {homeSections.map((section) => (
+                <MediaRow
+                  key={section.id}
+                  title={tHome(`sections.${section.id}.title`)}
+                  subtitle={tHome(`sections.${section.id}.subtitle`)}
+                  items={section.results}
+                  open={setSelected}
+                />
+              ))}
             </>
           )}
         </>

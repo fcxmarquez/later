@@ -29,10 +29,36 @@
     "seeDetails": "Ver detalles",
     "inYourList": "En tu lista",
     "myList": "Mi lista",
-    "trendingTitle": "Tendencias de la semana",
-    "trendingSubtitle": "Historias de las que todos están hablando",
-    "epicTitle": "Una noche épica",
-    "epicSubtitle": "Grandes mundos, decisiones imposibles",
+    "sections": {
+      "trending": {
+        "title": "Tendencias de la semana",
+        "subtitle": "Historias de las que todos están hablando"
+      },
+      "nowPlaying": {
+        "title": "En cartelera",
+        "subtitle": "Películas que puedes ver ahora en cines"
+      },
+      "popularMovies": {
+        "title": "Películas populares",
+        "subtitle": "Lo que más se está viendo en la gran pantalla"
+      },
+      "popularTv": {
+        "title": "Series populares",
+        "subtitle": "Capítulos que no dejan de recomendarse"
+      },
+      "topRatedMovies": {
+        "title": "Mejor valoradas",
+        "subtitle": "Clásicos y joyas con nota alta"
+      },
+      "onTheAir": {
+        "title": "Series en emisión",
+        "subtitle": "Temporadas que siguen al aire"
+      },
+      "upcoming": {
+        "title": "Próximos estrenos",
+        "subtitle": "Lo que llega pronto a los cines"
+      }
+    },
     "loadErrorTitle": "No pudimos cargar el catálogo",
     "loadErrorBody": "Comprueba tu conexión e inténtalo de nuevo.",
     "emptyTitle": "No hay historias para mostrar",

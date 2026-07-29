@@ -29,10 +29,36 @@
     "seeDetails": "See details",
     "inYourList": "In your list",
     "myList": "My list",
-    "trendingTitle": "Trending this week",
-    "trendingSubtitle": "Stories everyone is talking about",
-    "epicTitle": "An epic night in",
-    "epicSubtitle": "Vast worlds, impossible choices",
+    "sections": {
+      "trending": {
+        "title": "Trending this week",
+        "subtitle": "Stories everyone is talking about"
+      },
+      "nowPlaying": {
+        "title": "Now in theaters",
+        "subtitle": "Movies you can catch on the big screen"
+      },
+      "popularMovies": {
+        "title": "Popular movies",
+        "subtitle": "What audiences are watching most"
+      },
+      "popularTv": {
+        "title": "Popular series",
+        "subtitle": "Shows people keep recommending"
+      },
+      "topRatedMovies": {
+        "title": "Top rated",
+        "subtitle": "High-scoring classics and hidden gems"
+      },
+      "onTheAir": {
+        "title": "On the air",
+        "subtitle": "Series with seasons still rolling out"
+      },
+      "upcoming": {
+        "title": "Coming soon",
+        "subtitle": "Theatrical releases on the horizon"
+      }
+    },
     "loadErrorTitle": "We couldn't load the catalog",
     "loadErrorBody": "Check your connection and try again.",
     "emptyTitle": "No stories to show",
