@@ -25,15 +25,18 @@
   },
   "Home": {
     "eyebrow": "Una selección para ti",
-    "featuredAlt": "Escena destacada de Interstellar",
-    "featuredOverview": "Una odisea a través del espacio y el tiempo para encontrar un nuevo hogar para la humanidad.",
+    "featuredAlt": "Escena destacada de {title}",
     "seeDetails": "Ver detalles",
     "inYourList": "En tu lista",
     "myList": "Mi lista",
     "trendingTitle": "Tendencias de la semana",
     "trendingSubtitle": "Historias de las que todos están hablando",
     "epicTitle": "Una noche épica",
-    "epicSubtitle": "Grandes mundos, decisiones imposibles"
+    "epicSubtitle": "Grandes mundos, decisiones imposibles",
+    "loadErrorTitle": "No pudimos cargar el catálogo",
+    "loadErrorBody": "Comprueba tu conexión e inténtalo de nuevo.",
+    "emptyTitle": "No hay historias para mostrar",
+    "emptyBody": "El catálogo está vacío por ahora. Vuelve a intentarlo en un momento."
   },
   "Search": {
     "eyebrow": "Explora",

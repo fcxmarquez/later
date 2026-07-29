@@ -8,13 +8,12 @@ import {
   Compass,
   Eye,
   Film,
-  LoaderCircle,
   Play,
   Search,
   X,
 } from "lucide-react";
 import { getAuthClient } from "@/lib/auth/client";
-import { featured, fallbackCatalog, imageUrl } from "@/lib/catalog";
+import { imageUrl } from "@/lib/catalog";
 import {
   clearGuestWatchlist,
   GUEST_WATCHLIST_KEY,
@@ -24,6 +23,11 @@ import type { MediaItem, SavedMedia } from "@/lib/types";
 import { type WatchlistMode, useWatchlist } from "@/store/watchlist";
 import { DetailModal } from "./detail-modal";
 import { MediaCard } from "./media-card";
+import {
+  FeaturedHeroSkeleton,
+  MediaRowSkeleton,
+  SearchGridSkeleton,
+} from "./media-skeletons";
 import { ProfileMenu } from "./profile-menu";
 
 type View = "home" | "search" | "list";
@@ -42,9 +46,13 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
   const tErrors = useTranslations("WatchlistErrors");
   const locale = useLocale();
   const [view, setView] = useState<View>("home");
-  const [homeCatalog, setHomeCatalog] = useState(fallbackCatalog);
-  const [searchResults, setSearchResults] = useState(fallbackCatalog);
-  const [isSearching, setIsSearching] = useState(false);
+  const [homeCatalog, setHomeCatalog] = useState<MediaItem[]>([]);
+  const [loadedHomeLocale, setLoadedHomeLocale] = useState<string | null>(null);
+  const [homeError, setHomeError] = useState(false);
+  const [searchResults, setSearchResults] = useState<MediaItem[]>([]);
+  const [resolvedSearchKey, setResolvedSearchKey] = useState<string | null>(
+    null,
+  );
   const [searchError, setSearchError] = useState(false);
   const [selected, setSelected] = useState<MediaItem | null>(null);
   const [query, setQuery] = useState("");
@@ -52,12 +60,18 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const legacyMigrationStarted = useRef(false);
   const isGuest = mode === "guest";
+  const searchKey = `${locale}|${query}`;
+  const isHomeLoading = loadedHomeLocale !== locale;
+  const isSearching = view === "search" && resolvedSearchKey !== searchKey;
   const items = useWatchlist((state) => state.items);
   const add = useWatchlist((state) => state.add);
   const initialize = useWatchlist((state) => state.initialize);
   const error = useWatchlist((state) => state.error);
   const clearError = useWatchlist((state) => state.clearError);
-  const hasFeatured = useWatchlist((state) => state.has(featured));
+  const featured = homeCatalog[0] ?? null;
+  const hasFeatured = useWatchlist((state) =>
+    featured ? state.has(featured) : false,
+  );
   useEffect(() => {
     initialize(initialWatchlist, mode);
     if (isGuest || legacyMigrationStarted.current) return;
@@ -92,17 +106,31 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
     }
   }, [initialWatchlist, initialize, isGuest, mode]);
   useEffect(() => {
-    fetch(`/api/tmdb?locale=${encodeURIComponent(locale)}`)
-      .then((res) => res.json())
-      .then((data) => data.results?.length && setHomeCatalog(data.results))
-      .catch(() => {});
+    const controller = new AbortController();
+    fetch(`/api/tmdb?locale=${encodeURIComponent(locale)}`, {
+      signal: controller.signal,
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error("catalog failed");
+        return res.json();
+      })
+      .then((data) => {
+        setHomeCatalog(data.results ?? []);
+        setHomeError(false);
+        setLoadedHomeLocale(locale);
+      })
+      .catch((fetchError) => {
+        if (fetchError.name === "AbortError") return;
+        setHomeError(true);
+        setHomeCatalog([]);
+        setLoadedHomeLocale(locale);
+      });
+    return () => controller.abort();
   }, [locale]);
   useEffect(() => {
     if (view !== "search") return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      setIsSearching(true);
-      setSearchError(false);
       const params = new URLSearchParams({ locale });
       if (query) params.set("query", query);
       fetch(`/api/tmdb?${params}`, {
@@ -112,22 +140,24 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
           if (!res.ok) throw new Error("catalog failed");
           return res.json();
         })
-        .then((data) => setSearchResults(data.results || []))
+        .then((data) => {
+          setSearchResults(data.results || []);
+          setSearchError(false);
+          setResolvedSearchKey(searchKey);
+        })
         .catch((fetchError) => {
           if (fetchError.name !== "AbortError") {
             setSearchError(true);
             setSearchResults([]);
+            setResolvedSearchKey(searchKey);
           }
-        })
-        .finally(() => {
-          if (!controller.signal.aborted) setIsSearching(false);
         });
     }, 350);
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [locale, query, view]);
+  }, [locale, query, searchKey, view]);
   const list = useMemo(
     () =>
       items.filter(
@@ -191,57 +221,98 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
 
       {view === "home" && (
         <>
-          <section className="relative flex min-h-[78vh] items-end overflow-hidden px-5 pb-16 sm:px-10 lg:min-h-[88vh] lg:px-14 lg:pb-24">
-            <Image
-              src={imageUrl(featured.backdropPath, "backdrop")}
-              alt={tHome("featuredAlt")}
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/30 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#050507] via-transparent to-black/20" />
-            <div className="relative max-w-2xl">
-              <p className="mb-4 text-xs font-bold tracking-[.32em] text-blue-300 uppercase">
-                {tHome("eyebrow")}
+          {isHomeLoading ? (
+            <>
+              <FeaturedHeroSkeleton />
+              <MediaRowSkeleton
+                title={tHome("trendingTitle")}
+                subtitle={tHome("trendingSubtitle")}
+              />
+              <MediaRowSkeleton
+                title={tHome("epicTitle")}
+                subtitle={tHome("epicSubtitle")}
+              />
+            </>
+          ) : homeError ? (
+            <section className="flex min-h-[70vh] flex-col items-center justify-center px-5 text-center sm:px-10">
+              <Film size={34} className="text-zinc-600" />
+              <h2 className="mt-4 text-xl font-semibold">
+                {tHome("loadErrorTitle")}
+              </h2>
+              <p className="mt-2 max-w-sm text-sm text-zinc-500">
+                {tHome("loadErrorBody")}
               </p>
-              <h1 className="text-5xl font-bold tracking-[-.05em] sm:text-7xl lg:text-8xl">
-                Interstellar
-              </h1>
-              <p className="mt-5 max-w-xl text-base leading-7 text-zinc-200 sm:text-lg">
-                {tHome("featuredOverview")}
+            </section>
+          ) : !featured ? (
+            <section className="flex min-h-[70vh] flex-col items-center justify-center px-5 text-center sm:px-10">
+              <Film size={34} className="text-zinc-600" />
+              <h2 className="mt-4 text-xl font-semibold">
+                {tHome("emptyTitle")}
+              </h2>
+              <p className="mt-2 max-w-sm text-sm text-zinc-500">
+                {tHome("emptyBody")}
               </p>
-              <div className="mt-7 flex gap-3">
-                <button
-                  onClick={() => setSelected(featured)}
-                  className="flex items-center gap-2 rounded-full bg-white px-6 py-3.5 font-semibold text-black transition hover:scale-105"
-                >
-                  <Play size={18} fill="currentColor" /> {tHome("seeDetails")}
-                </button>
-                <button
-                  disabled={hasFeatured}
-                  onClick={() => add(featured)}
-                  className="glass flex items-center gap-2 rounded-full px-6 py-3.5 font-semibold disabled:opacity-70"
-                >
-                  {hasFeatured ? <Check size={19} /> : <Bookmark size={19} />}{" "}
-                  {hasFeatured ? tHome("inYourList") : tHome("myList")}
-                </button>
-              </div>
-            </div>
-          </section>
-          <MediaRow
-            title={tHome("trendingTitle")}
-            subtitle={tHome("trendingSubtitle")}
-            items={homeCatalog}
-            open={setSelected}
-          />
-          <MediaRow
-            title={tHome("epicTitle")}
-            subtitle={tHome("epicSubtitle")}
-            items={[...homeCatalog].reverse()}
-            open={setSelected}
-          />
+            </section>
+          ) : (
+            <>
+              <section className="relative flex min-h-[78vh] items-end overflow-hidden px-5 pb-16 sm:px-10 lg:min-h-[88vh] lg:px-14 lg:pb-24">
+                <Image
+                  src={imageUrl(featured.backdropPath, "backdrop")}
+                  alt={tHome("featuredAlt", { title: featured.title })}
+                  fill
+                  priority
+                  sizes="100vw"
+                  className="object-cover object-center"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/30 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050507] via-transparent to-black/20" />
+                <div className="relative max-w-2xl">
+                  <p className="mb-4 text-xs font-bold tracking-[.32em] text-blue-300 uppercase">
+                    {tHome("eyebrow")}
+                  </p>
+                  <h1 className="text-5xl font-bold tracking-[-.05em] sm:text-7xl lg:text-8xl">
+                    {featured.title}
+                  </h1>
+                  <p className="mt-5 max-w-xl text-base leading-7 text-zinc-200 sm:text-lg">
+                    {featured.overview}
+                  </p>
+                  <div className="mt-7 flex gap-3">
+                    <button
+                      onClick={() => setSelected(featured)}
+                      className="flex items-center gap-2 rounded-full bg-white px-6 py-3.5 font-semibold text-black transition hover:scale-105"
+                    >
+                      <Play size={18} fill="currentColor" />{" "}
+                      {tHome("seeDetails")}
+                    </button>
+                    <button
+                      disabled={hasFeatured}
+                      onClick={() => add(featured)}
+                      className="glass flex items-center gap-2 rounded-full px-6 py-3.5 font-semibold disabled:opacity-70"
+                    >
+                      {hasFeatured ? (
+                        <Check size={19} />
+                      ) : (
+                        <Bookmark size={19} />
+                      )}{" "}
+                      {hasFeatured ? tHome("inYourList") : tHome("myList")}
+                    </button>
+                  </div>
+                </div>
+              </section>
+              <MediaRow
+                title={tHome("trendingTitle")}
+                subtitle={tHome("trendingSubtitle")}
+                items={homeCatalog}
+                open={setSelected}
+              />
+              <MediaRow
+                title={tHome("epicTitle")}
+                subtitle={tHome("epicSubtitle")}
+                items={[...homeCatalog].reverse()}
+                open={setSelected}
+              />
+            </>
+          )}
         </>
       )}
 
@@ -274,12 +345,9 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
               </button>
             )}
           </div>
-          <div className="mt-12" aria-live="polite">
+          <div className="mt-12" aria-live="polite" aria-busy={isSearching}>
             {isSearching ? (
-              <div className="flex min-h-48 items-center justify-center gap-3 text-zinc-400">
-                <LoaderCircle className="animate-spin" size={22} />
-                <span>{tSearch("searching")}</span>
-              </div>
+              <SearchGridSkeleton />
             ) : searchError ? (
               <div className="flex min-h-48 flex-col items-center justify-center text-center">
                 <Film size={34} className="text-zinc-600" />
