@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { Check, Plus } from "lucide-react";
 import { imageUrl } from "@/lib/catalog";
 import { MediaItem } from "@/lib/types";
@@ -12,6 +13,8 @@ export function MediaCard({
   item: MediaItem;
   onOpen: (item: MediaItem) => void;
 }) {
+  const t = useTranslations("MediaCard");
+  const tCommon = useTranslations("Common");
   const saved = useWatchlist((state) =>
     state.items.find(
       (entry) => entry.id === item.id && entry.mediaType === item.mediaType,
@@ -24,12 +27,12 @@ export function MediaCard({
         type="button"
         onClick={() => onOpen(item)}
         className="absolute inset-0 z-10 cursor-pointer rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#050507]"
-        aria-label={`Ver detalles de ${item.title}`}
+        aria-label={t("openDetails", { title: item.title })}
       />
       <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-zinc-900 transition duration-500 group-hover:-translate-y-2 group-hover:scale-[1.025] group-hover:shadow-[0_20px_55px_rgba(0,0,0,.8)]">
         <Image
           src={imageUrl(item.posterPath)}
-          alt={`Póster de ${item.title}`}
+          alt={t("posterAlt", { title: item.title })}
           fill
           sizes="215px"
           className="object-cover transition duration-700 group-hover:scale-105"
@@ -42,12 +45,12 @@ export function MediaCard({
             if (!saved) add(item);
           }}
           className="absolute right-3 bottom-3 z-20 grid size-11 cursor-pointer place-items-center rounded-full bg-white text-black opacity-100 shadow-lg transition hover:scale-110 disabled:cursor-default sm:size-10 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
-          aria-label={saved ? "Ya está en tu lista" : "Añadir a mi lista"}
+          aria-label={saved ? t("alreadySaved") : t("addToList")}
         >
           {saved ? <Check size={19} /> : <Plus size={20} />}
         </button>
         <span className="absolute top-3 left-3 rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-semibold tracking-widest uppercase backdrop-blur-md">
-          {item.mediaType === "movie" ? "Película" : "Serie"}
+          {item.mediaType === "movie" ? tCommon("movie") : tCommon("series")}
         </span>
       </div>
       <h3 className="mt-3 truncate text-sm font-semibold text-zinc-100 sm:text-base">

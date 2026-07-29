@@ -157,10 +157,41 @@ input {
   .detail-hero-image,
   .detail-hero-copy,
   .detail-stagger,
-  .detail-overview-text {
+  .detail-overview-text,
+  .profile-menu {
     animation: none !important;
     transition: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+}
+
+.profile-menu {
+  --profile-menu-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+.profile-menu.is-open {
+  animation: profile-menu-in 220ms var(--profile-menu-ease) forwards;
+}
+.profile-menu.is-exit {
+  animation: profile-menu-out 160ms ease-in forwards;
+}
+@keyframes profile-menu-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes profile-menu-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0) scale(0.96);
   }
 }

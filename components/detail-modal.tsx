@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState, type SyntheticEvent } from "react";
 import { Check, ChevronDown, Eye, Plus, X } from "lucide-react";
 import { imageUrl } from "@/lib/catalog";
@@ -37,6 +38,7 @@ function mergeDetail(item: MediaItem, detail: MediaDetail | null): MediaDetail {
       ...item,
       cast: [],
       providers: [],
+      providersRegion: null,
       runtime: null,
       seasons: null,
       status: null,
@@ -113,6 +115,7 @@ function CastCard({ member }: { member: CastMember }) {
 }
 
 function ExpandableOverview({ text, id }: { text: string; id: string }) {
+  const t = useTranslations("Detail");
   const contentRef = useRef<HTMLParagraphElement>(null);
   const collapsedHeightRef = useRef(96);
   const [expanded, setExpanded] = useState(false);
@@ -188,7 +191,7 @@ function ExpandableOverview({ text, id }: { text: string; id: string }) {
         aria-expanded={canExpand ? expanded : undefined}
         aria-controls={canExpand ? id : undefined}
         aria-label={
-          canExpand ? (expanded ? "Ver menos" : "Ver más") : undefined
+          canExpand ? (expanded ? t("showLess") : t("showMore")) : undefined
         }
       >
         <p
@@ -255,6 +258,9 @@ export function DetailModal({
   item: MediaItem;
   close: () => void;
 }) {
+  const t = useTranslations("Detail");
+  const tCommon = useTranslations("Common");
+  const locale = useLocale();
   const saved = useWatchlist((state) =>
     state.items.find(
       (entry) => entry.id === item.id && entry.mediaType === item.mediaType,
@@ -273,9 +279,9 @@ export function DetailModal({
   const view = mergeDetail(item, detail);
   const runtimeLabel = formatRuntime(view.runtime);
   const creditLine = view.director
-    ? `Dirección · ${view.director}`
+    ? t("directedBy", { name: view.director })
     : view.creators?.length
-      ? `Creación · ${view.creators.join(", ")}`
+      ? t("createdBy", { names: view.creators.join(", ") })
       : null;
 
   const requestClose = () => {
@@ -294,7 +300,12 @@ export function DetailModal({
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`/api/tmdb/detail?id=${item.id}&type=${item.mediaType}`, {
+    const params = new URLSearchParams({
+      id: String(item.id),
+      type: item.mediaType,
+      locale,
+    });
+    fetch(`/api/tmdb/detail?${params}`, {
       signal: controller.signal,
     })
       .then(async (response) => {
@@ -310,7 +321,7 @@ export function DetailModal({
         setLoadError(true);
       });
     return () => controller.abort();
-  }, [item.id, item.mediaType]);
+  }, [item.id, item.mediaType, locale]);
 
   useEffect(() => {
     const previousFocus = document.activeElement as HTMLElement | null;
@@ -357,7 +368,9 @@ export function DetailModal({
   const metaBits = [
     view.year,
     runtimeLabel,
-    view.mediaType === "tv" && view.seasons ? `${view.seasons} temp.` : null,
+    view.mediaType === "tv" && view.seasons
+      ? t("seasons", { count: view.seasons })
+      : null,
     view.rating > 0 ? `★ ${view.rating.toFixed(1)}` : null,
   ].filter(Boolean);
 
@@ -393,7 +406,7 @@ export function DetailModal({
             type="button"
             onClick={requestClose}
             className="glass absolute top-5 right-5 z-20 grid size-11 place-items-center rounded-full transition hover:bg-white hover:text-black sm:top-7 sm:right-8"
-            aria-label="Cerrar"
+            aria-label={t("close")}
           >
             <X />
           </button>
@@ -401,7 +414,9 @@ export function DetailModal({
           <div className="relative flex min-h-[72vh] flex-col justify-end px-5 pb-10 sm:min-h-[78vh] sm:px-10 sm:pb-14 lg:px-16">
             <div className="detail-hero-copy max-w-3xl">
               <span className="text-[11px] font-semibold tracking-[0.22em] text-zinc-300 uppercase">
-                {view.mediaType === "movie" ? "Película" : "Serie"}
+                {view.mediaType === "movie"
+                  ? tCommon("movie")
+                  : tCommon("series")}
               </span>
 
               <h2
@@ -435,7 +450,7 @@ export function DetailModal({
                     onClick={() => add(item)}
                     className="flex items-center gap-2 rounded-full bg-white px-6 py-3.5 font-semibold text-black transition hover:scale-[1.03]"
                   >
-                    <Plus size={19} /> Añadir a mi lista
+                    <Plus size={19} /> {t("addToList")}
                   </button>
                 ) : (
                   <>
@@ -445,14 +460,14 @@ export function DetailModal({
                       className={`flex items-center gap-2 rounded-full px-6 py-3.5 font-semibold transition hover:scale-[1.03] ${saved.watched ? "bg-emerald-400 text-black" : "bg-white text-black"}`}
                     >
                       {saved.watched ? <Check size={19} /> : <Eye size={19} />}{" "}
-                      {saved.watched ? "Ya la viste" : "Marcar como vista"}
+                      {saved.watched ? t("alreadyWatched") : t("markWatched")}
                     </button>
                     <button
                       type="button"
                       onClick={() => remove(item)}
                       className="rounded-full bg-white/10 px-6 py-3.5 font-semibold backdrop-blur-md transition hover:bg-white/20"
                     >
-                      Quitar de mi lista
+                      {t("removeFromList")}
                     </button>
                   </>
                 )}
@@ -464,7 +479,7 @@ export function DetailModal({
         <div className="relative z-10 space-y-12 px-5 pb-20 sm:px-10 lg:px-16">
           <section className="detail-stagger max-w-3xl">
             <h3 className="text-xs font-bold tracking-[0.28em] text-zinc-500 uppercase">
-              Sinopsis
+              {t("synopsis")}
             </h3>
             <ExpandableOverview
               key={view.overview}
@@ -476,7 +491,7 @@ export function DetailModal({
             )}
             {loadError && (
               <p className="mt-4 text-sm text-amber-300/90">
-                No pudimos enriquecer la ficha. Mostramos la información básica.
+                {t("enrichmentError")}
               </p>
             )}
           </section>
@@ -484,10 +499,12 @@ export function DetailModal({
           {view.providers.length > 0 && (
             <section className="detail-stagger">
               <h3 className="text-xs font-bold tracking-[0.28em] text-zinc-500 uppercase">
-                Dónde verlo
+                {t("whereToWatch")}
               </h3>
               <p className="mt-2 text-sm text-zinc-500">
-                Disponibilidad en México (streaming, alquiler o compra).
+                {t("whereToWatchHint", {
+                  region: view.providersRegion || "MX",
+                })}
               </p>
               <ul className="mt-5 flex gap-4 overflow-x-auto pb-2">
                 {view.providers.map((provider) => (
@@ -500,7 +517,7 @@ export function DetailModal({
           {view.cast.length > 0 && (
             <section className="detail-stagger">
               <h3 className="text-xs font-bold tracking-[0.28em] text-zinc-500 uppercase">
-                Reparto
+                {t("cast")}
               </h3>
               <ul className="hide-scrollbar mt-5 flex gap-4 overflow-x-auto pb-4">
                 {view.cast.map((member) => (

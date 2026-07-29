@@ -1,0 +1,119 @@
+{
+  "Metadata": {
+    "title": "Later — Tu próxima historia",
+    "description": "Guarda películas y series para ver más tarde."
+  },
+  "Common": {
+    "movie": "Película",
+    "series": "Serie",
+    "close": "Cerrar",
+    "untitled": "Sin título",
+    "noOverview": "Sin descripción disponible."
+  },
+  "Nav": {
+    "home": "Inicio",
+    "explore": "Explorar",
+    "myList": "Mi lista",
+    "guestMode": "Modo invitado",
+    "guest": "Invitado",
+    "signIn": "Iniciar sesión",
+    "signedIn": "Cuenta autenticada",
+    "signOut": "Cerrar sesión",
+    "language": "Idioma",
+    "switchToEn": "English",
+    "switchToEs": "Español"
+  },
+  "Home": {
+    "eyebrow": "Una selección para ti",
+    "featuredAlt": "Escena destacada de Interstellar",
+    "featuredOverview": "Una odisea a través del espacio y el tiempo para encontrar un nuevo hogar para la humanidad.",
+    "seeDetails": "Ver detalles",
+    "inYourList": "En tu lista",
+    "myList": "Mi lista",
+    "trendingTitle": "Tendencias de la semana",
+    "trendingSubtitle": "Historias de las que todos están hablando",
+    "epicTitle": "Una noche épica",
+    "epicSubtitle": "Grandes mundos, decisiones imposibles"
+  },
+  "Search": {
+    "eyebrow": "Explora",
+    "title": "Encuentra tu próxima historia.",
+    "aria": "Buscar películas o series",
+    "placeholder": "Películas, series…",
+    "clear": "Limpiar búsqueda",
+    "searching": "Buscando historias…",
+    "loadErrorTitle": "No pudimos cargar el catálogo",
+    "loadErrorBody": "Comprueba tu conexión e intenta buscar de nuevo.",
+    "emptyTitle": "No encontramos resultados",
+    "emptyBody": "Prueba con otro título o una búsqueda más corta."
+  },
+  "List": {
+    "eyebrow": "Tu espacio",
+    "title": "Mi lista",
+    "count": "{count, plural, =1 {# historia guardada} other {# historias guardadas}}",
+    "onThisDevice": " · en este dispositivo",
+    "filterAll": "Todas",
+    "filterPending": "Pendientes",
+    "filterWatched": "Vistas",
+    "emptyTitle": "Tu lista está esperando",
+    "emptyBody": "Explora el catálogo y guarda todo lo que quieras ver después.",
+    "emptyCta": "Explorar títulos",
+    "noPendingTitle": "No tienes historias pendientes",
+    "noPendingBody": "Todo lo que guardaste ya está marcado como visto.",
+    "noPendingCta": "Ver historias vistas",
+    "noWatchedTitle": "Aún no has marcado ninguna como vista",
+    "noWatchedBody": "Cuando termines una historia, podrás encontrarla aquí.",
+    "noWatchedCta": "Ver historias pendientes"
+  },
+  "MediaCard": {
+    "openDetails": "Ver detalles de {title}",
+    "posterAlt": "Póster de {title}",
+    "alreadySaved": "Ya está en tu lista",
+    "addToList": "Añadir a mi lista"
+  },
+  "Detail": {
+    "close": "Cerrar",
+    "showMore": "Ver más",
+    "showLess": "Ver menos",
+    "addToList": "Añadir a mi lista",
+    "markWatched": "Marcar como vista",
+    "alreadyWatched": "Ya la viste",
+    "removeFromList": "Quitar de mi lista",
+    "synopsis": "Sinopsis",
+    "directedBy": "Dirección · {name}",
+    "createdBy": "Creación · {names}",
+    "seasons": "{count} temp.",
+    "enrichmentError": "No pudimos enriquecer la ficha. Mostramos la información básica.",
+    "whereToWatch": "Dónde verlo",
+    "whereToWatchHint": "Disponibilidad en {region, select, MX {México} US {EE. UU.} other {México}} (streaming, alquiler o compra).",
+    "cast": "Reparto"
+  },
+  "WatchlistErrors": {
+    "addFailed": "No pudimos añadir el título. Inténtalo de nuevo.",
+    "removeFailed": "No pudimos quitar el título. Inténtalo de nuevo.",
+    "toggleFailed": "No pudimos cambiar el estado. Inténtalo de nuevo.",
+    "dismiss": "Cerrar mensaje"
+  },
+  "SignIn": {
+    "title": "Tu lista te espera.",
+    "bodyReady": "Entra con Google para sincronizar en la nube, o continúa como invitado y guarda tu lista en este dispositivo.",
+    "bodyGuestOnly": "El login con Google aún no está configurado en este entorno. Puedes continuar como invitado y guardar tu lista en este dispositivo.",
+    "continueGuest": "Continuar como invitado",
+    "oauthError": "Google no pudo completar el inicio de sesión. Inténtalo de nuevo.",
+    "footnote": "La sincronización en la nube requiere una cuenta autorizada."
+  },
+  "GoogleSignIn": {
+    "continue": "Continuar con Google",
+    "opening": "Abriendo Google…",
+    "failed": "No se pudo iniciar sesión con Google.",
+    "connectFailed": "No se pudo conectar con Google. Inténtalo de nuevo."
+  },
+  "Restricted": {
+    "eyebrow": "Acceso restringido",
+    "title": "Esta cuenta no tiene acceso.",
+    "body": "Later está disponible únicamente para la cuenta autorizada.",
+    "signingOut": "Cerrando sesión…",
+    "tryAnother": "Probar con otra cuenta",
+    "continueGuest": "Continuar como invitado"
+  }
+}

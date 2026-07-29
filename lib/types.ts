@@ -25,6 +25,8 @@ export type WatchProvider = {
   logoPath: string;
 };
 
+export type WatchProviderRegion = "MX" | "US";
+
 export type MediaDetail = MediaItem & {
   tagline?: string;
   runtime?: number | null;
@@ -32,6 +34,7 @@ export type MediaDetail = MediaItem & {
   status?: string | null;
   cast: CastMember[];
   providers: WatchProvider[];
+  providersRegion?: WatchProviderRegion | null;
   director?: string | null;
   creators?: string[];
 };

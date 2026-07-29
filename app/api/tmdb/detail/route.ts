@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fallbackCatalog, getFallbackDetail } from "@/lib/catalog";
+import { isAppLocale, routing, tmdbLanguage } from "@/i18n/routing";
 import type {
   CastMember,
   MediaDetail,
@@ -7,6 +8,16 @@ import type {
   MediaType,
   WatchProvider,
 } from "@/lib/types";
+
+const untitledByLocale = {
+  es: "Sin título",
+  en: "Untitled",
+} as const;
+
+const noOverviewByLocale = {
+  es: "Sin descripción disponible.",
+  en: "No description available.",
+} as const;
 
 type TmdbGenre = { id: number; name: string };
 type TmdbCast = {
@@ -63,17 +74,43 @@ function isMediaType(value: string | null): value is MediaType {
   return value === "movie" || value === "tv";
 }
 
-function mapProviders(detail: TmdbDetailResponse): WatchProvider[] {
+function regionHasProviders(
+  region:
+    | {
+        flatrate?: TmdbProvider[];
+        rent?: TmdbProvider[];
+        buy?: TmdbProvider[];
+        ads?: TmdbProvider[];
+        free?: TmdbProvider[];
+      }
+    | undefined,
+) {
+  if (!region) return false;
+  return [region.flatrate, region.ads, region.free, region.rent, region.buy]
+    .filter(Boolean)
+    .some((bucket) => (bucket?.length ?? 0) > 0);
+}
+
+function mapProviders(detail: TmdbDetailResponse): {
+  providers: WatchProvider[];
+  providersRegion: "MX" | "US" | null;
+} {
+  const results = detail["watch/providers"]?.results;
+  const mx = results?.MX;
+  const us = results?.US;
+  const providersRegion = regionHasProviders(mx)
+    ? "MX"
+    : regionHasProviders(us)
+      ? "US"
+      : null;
   const region =
-    detail["watch/providers"]?.results?.MX ||
-    detail["watch/providers"]?.results?.US ||
-    {};
+    providersRegion === "MX" ? mx : providersRegion === "US" ? us : {};
   const buckets = [
-    region.flatrate,
-    region.ads,
-    region.free,
-    region.rent,
-    region.buy,
+    region?.flatrate,
+    region?.ads,
+    region?.free,
+    region?.rent,
+    region?.buy,
   ];
   const providers: WatchProvider[] = [];
   const seen = new Set<number>();
@@ -86,15 +123,18 @@ function mapProviders(detail: TmdbDetailResponse): WatchProvider[] {
         name: provider.provider_name.trim(),
         logoPath: provider.logo_path,
       });
-      if (providers.length >= 8) return providers;
+      if (providers.length >= 8) {
+        return { providers, providersRegion };
+      }
     }
   }
-  return providers;
+  return { providers, providersRegion };
 }
 
 function mapDetail(
   detail: TmdbDetailResponse,
   mediaType: MediaType,
+  locale: "es" | "en",
 ): MediaDetail {
   const cast: CastMember[] = (detail.credits?.cast || [])
     .slice()
@@ -116,10 +156,12 @@ function mapDetail(
       ? (detail.runtime ?? null)
       : (detail.episode_run_time?.[0] ?? detail.runtime ?? null);
 
+  const { providers, providersRegion } = mapProviders(detail);
+
   return {
     id: detail.id,
-    title: detail.title || detail.name || "Sin título",
-    overview: detail.overview || "Sin descripción disponible.",
+    title: detail.title || detail.name || untitledByLocale[locale],
+    overview: detail.overview || noOverviewByLocale[locale],
     posterPath: detail.poster_path || "",
     backdropPath: detail.backdrop_path || detail.poster_path || "",
     mediaType,
@@ -134,7 +176,8 @@ function mapDetail(
     seasons: mediaType === "tv" ? (detail.number_of_seasons ?? null) : null,
     status: detail.status || null,
     cast,
-    providers: mapProviders(detail),
+    providers,
+    providersRegion,
     director,
     creators,
   };
@@ -143,6 +186,10 @@ function mapDetail(
 export async function GET(request: NextRequest) {
   const idParam = request.nextUrl.searchParams.get("id");
   const typeParam = request.nextUrl.searchParams.get("type");
+  const localeParam =
+    request.nextUrl.searchParams.get("locale") || routing.defaultLocale;
+  const locale = isAppLocale(localeParam) ? localeParam : routing.defaultLocale;
+  const language = tmdbLanguage(locale);
   const id = Number(idParam);
 
   if (!idParam || !Number.isFinite(id) || id <= 0 || !isMediaType(typeParam)) {
@@ -156,8 +203,8 @@ export async function GET(request: NextRequest) {
     (entry) => entry.id === id && entry.mediaType === typeParam,
   ) ?? {
     id,
-    title: "Sin título",
-    overview: "Sin descripción disponible.",
+    title: untitledByLocale[locale],
+    overview: noOverviewByLocale[locale],
     posterPath: "",
     backdropPath: "",
     mediaType: typeParam,
@@ -176,7 +223,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const response = await fetch(
-      `https://api.themoviedb.org/3/${typeParam}/${id}?language=es-ES&append_to_response=credits,watch/providers`,
+      `https://api.themoviedb.org/3/${typeParam}/${id}?language=${language}&append_to_response=credits,watch/providers`,
       {
         headers: { Authorization: `Bearer ${token}` },
         next: { revalidate: 3600 },
@@ -198,7 +245,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ detail: mapDetail(data, typeParam) });
+    return NextResponse.json({
+      detail: mapDetail(data, typeParam, locale),
+    });
   } catch {
     return NextResponse.json({
       detail: getFallbackDetail(baseItem),

@@ -1,0 +1,119 @@
+{
+  "Metadata": {
+    "title": "Later — Your next story",
+    "description": "Save movies and shows to watch later."
+  },
+  "Common": {
+    "movie": "Movie",
+    "series": "Series",
+    "close": "Close",
+    "untitled": "Untitled",
+    "noOverview": "No description available."
+  },
+  "Nav": {
+    "home": "Home",
+    "explore": "Explore",
+    "myList": "My list",
+    "guestMode": "Guest mode",
+    "guest": "Guest",
+    "signIn": "Sign in",
+    "signedIn": "Signed-in account",
+    "signOut": "Sign out",
+    "language": "Language",
+    "switchToEn": "English",
+    "switchToEs": "Español"
+  },
+  "Home": {
+    "eyebrow": "Picked for you",
+    "featuredAlt": "Featured scene from Interstellar",
+    "featuredOverview": "An odyssey through space and time to find a new home for humanity.",
+    "seeDetails": "See details",
+    "inYourList": "In your list",
+    "myList": "My list",
+    "trendingTitle": "Trending this week",
+    "trendingSubtitle": "Stories everyone is talking about",
+    "epicTitle": "An epic night in",
+    "epicSubtitle": "Vast worlds, impossible choices"
+  },
+  "Search": {
+    "eyebrow": "Explore",
+    "title": "Find your next story.",
+    "aria": "Search movies or series",
+    "placeholder": "Movies, series…",
+    "clear": "Clear search",
+    "searching": "Searching stories…",
+    "loadErrorTitle": "We couldn't load the catalog",
+    "loadErrorBody": "Check your connection and try searching again.",
+    "emptyTitle": "No results found",
+    "emptyBody": "Try another title or a shorter search."
+  },
+  "List": {
+    "eyebrow": "Your space",
+    "title": "My list",
+    "count": "{count, plural, =1 {# saved story} other {# saved stories}}",
+    "onThisDevice": " · on this device",
+    "filterAll": "All",
+    "filterPending": "Pending",
+    "filterWatched": "Watched",
+    "emptyTitle": "Your list is waiting",
+    "emptyBody": "Browse the catalog and save everything you want to watch later.",
+    "emptyCta": "Explore titles",
+    "noPendingTitle": "No pending stories",
+    "noPendingBody": "Everything you saved is already marked as watched.",
+    "noPendingCta": "See watched stories",
+    "noWatchedTitle": "You haven't marked any as watched yet",
+    "noWatchedBody": "When you finish a story, you'll find it here.",
+    "noWatchedCta": "See pending stories"
+  },
+  "MediaCard": {
+    "openDetails": "See details for {title}",
+    "posterAlt": "Poster for {title}",
+    "alreadySaved": "Already in your list",
+    "addToList": "Add to my list"
+  },
+  "Detail": {
+    "close": "Close",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "addToList": "Add to my list",
+    "markWatched": "Mark as watched",
+    "alreadyWatched": "Already watched",
+    "removeFromList": "Remove from my list",
+    "synopsis": "Synopsis",
+    "directedBy": "Directed by · {name}",
+    "createdBy": "Created by · {names}",
+    "seasons": "{count} seasons",
+    "enrichmentError": "We couldn't enrich this title. Showing basic information.",
+    "whereToWatch": "Where to watch",
+    "whereToWatchHint": "Availability in {region, select, MX {Mexico} US {USA} other {Mexico}} (streaming, rent, or buy).",
+    "cast": "Cast"
+  },
+  "WatchlistErrors": {
+    "addFailed": "We couldn't add the title. Please try again.",
+    "removeFailed": "We couldn't remove the title. Please try again.",
+    "toggleFailed": "We couldn't update the status. Please try again.",
+    "dismiss": "Dismiss message"
+  },
+  "SignIn": {
+    "title": "Your list is waiting.",
+    "bodyReady": "Sign in with Google to sync in the cloud, or continue as a guest and keep your list on this device.",
+    "bodyGuestOnly": "Google sign-in isn't configured in this environment. You can continue as a guest and keep your list on this device.",
+    "continueGuest": "Continue as guest",
+    "oauthError": "Google couldn't complete sign-in. Please try again.",
+    "footnote": "Cloud sync requires an authorized account."
+  },
+  "GoogleSignIn": {
+    "continue": "Continue with Google",
+    "opening": "Opening Google…",
+    "failed": "Couldn't sign in with Google.",
+    "connectFailed": "Couldn't connect to Google. Please try again."
+  },
+  "Restricted": {
+    "eyebrow": "Restricted access",
+    "title": "This account doesn't have access.",
+    "body": "Later is only available for the authorized account.",
+    "signingOut": "Signing out…",
+    "tryAnother": "Try another account",
+    "continueGuest": "Continue as guest"
+  }
+}

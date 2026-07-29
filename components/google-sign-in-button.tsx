@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { LoaderCircle } from "lucide-react";
 import { getAuthClient } from "@/lib/auth/client";
 
 export function GoogleSignInButton() {
+  const t = useTranslations("GoogleSignIn");
+  const locale = useLocale();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,17 +19,17 @@ export function GoogleSignInButton() {
       const origin = window.location.origin;
       const { error: authError } = await getAuthClient().signIn.social({
         provider: "google",
-        callbackURL: origin,
-        newUserCallbackURL: origin,
-        errorCallbackURL: `${origin}/auth/sign-in?error=oauth`,
+        callbackURL: `${origin}/${locale}`,
+        newUserCallbackURL: `${origin}/${locale}`,
+        errorCallbackURL: `${origin}/${locale}/auth/sign-in?error=oauth`,
       });
 
       if (authError) {
-        setError(authError.message || "No se pudo iniciar sesión con Google.");
+        setError(authError.message || t("failed"));
         setIsPending(false);
       }
     } catch {
-      setError("No se pudo conectar con Google. Inténtalo de nuevo.");
+      setError(t("connectFailed"));
       setIsPending(false);
     }
   };
@@ -44,7 +47,7 @@ export function GoogleSignInButton() {
         ) : (
           <GoogleIcon />
         )}
-        {isPending ? "Abriendo Google…" : "Continuar con Google"}
+        {isPending ? t("opening") : t("continue")}
       </button>
       {error && (
         <p className="mt-4 text-center text-sm text-red-300" role="alert">

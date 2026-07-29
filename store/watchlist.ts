@@ -13,11 +13,13 @@ export type WatchlistMode = "guest" | "authenticated";
 
 type MediaIdentity = Pick<MediaItem, "id" | "mediaType">;
 
+export type WatchlistErrorKey = "addFailed" | "removeFailed" | "toggleFailed";
+
 type WatchlistStore = {
   items: SavedMedia[];
   mode: WatchlistMode | null;
   initialized: boolean;
-  error: string | null;
+  error: WatchlistErrorKey | null;
   initialize: (items: SavedMedia[], mode: WatchlistMode) => void;
   clearError: () => void;
   add: (item: MediaItem) => Promise<boolean>;
@@ -44,7 +46,7 @@ async function requestWatchlist(
   });
 
   if (!response.ok) {
-    throw new Error("No se pudo guardar el cambio en Postgres.");
+    throw new Error("watchlist-persist-failed");
   }
 
   if (response.status === 204) return null;
@@ -106,7 +108,7 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
     } catch {
       set((state) => ({
         items: state.items.filter((saved) => !isSameMedia(saved, item)),
-        error: "No pudimos añadir el título. Inténtalo de nuevo.",
+        error: "addFailed",
       }));
       return false;
     }
@@ -131,7 +133,7 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
         items: [...state.items, removed].sort(
           (left, right) => left.addedAt - right.addedAt,
         ),
-        error: "No pudimos quitar el título. Inténtalo de nuevo.",
+        error: "removeFailed",
       }));
       return false;
     }
@@ -168,7 +170,7 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
             ? { ...entry, watched: saved.watched }
             : entry,
         ),
-        error: "No pudimos cambiar el estado. Inténtalo de nuevo.",
+        error: "toggleFailed",
       }));
       return false;
     }
