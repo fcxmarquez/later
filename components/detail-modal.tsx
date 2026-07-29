@@ -335,13 +335,19 @@ function TrailerLightbox({
       role="dialog"
       aria-modal="true"
       aria-label={trailer.name}
-      onClick={requestClose}
+      onClick={(event) => {
+        event.stopPropagation();
+        requestClose();
+      }}
     >
       <div className="trailer-lightbox-dim absolute inset-0 bg-black/80 backdrop-blur-[2px]" />
       <button
         ref={closeButtonRef}
         type="button"
-        onClick={requestClose}
+        onClick={(event) => {
+          event.stopPropagation();
+          requestClose();
+        }}
         className="glass absolute top-5 right-5 z-20 grid size-11 place-items-center rounded-full transition hover:bg-white hover:text-black sm:top-7 sm:right-8"
         aria-label={t("closeTrailer")}
       >
@@ -676,7 +682,10 @@ export function DetailModal({
   return (
     <div
       className={`detail-overlay fixed inset-0 z-50 ${phase === "enter" ? "is-enter" : ""} ${phase === "shown" ? "is-shown" : ""} ${phase === "exit" ? "is-exit" : ""}`}
-      onClick={requestClose}
+      onClick={() => {
+        if (trailerPlayerRef.current) return;
+        requestClose();
+      }}
     >
       <div className="detail-overlay-dim absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <section
