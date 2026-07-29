@@ -820,16 +820,13 @@ export function DetailModal({
               <h3 className="text-xs font-bold tracking-[0.28em] text-zinc-500 uppercase">
                 {t("whereToWatch")}
               </h3>
-              <p className="mt-2 text-sm text-zinc-500">
+              <p className="mt-2 text-sm text-zinc-100">
                 {t("inCinemasHint", {
                   regionName: formatRegionName(
                     view.providersRegion || "US",
                     locale,
                   ),
                 })}
-              </p>
-              <p className="mt-5 inline-flex items-center border border-white/20 bg-white/[0.06] px-4 py-2 text-sm font-medium tracking-wide text-zinc-100">
-                {t("inCinemas")}
               </p>
             </section>
           ) : (

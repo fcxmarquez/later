@@ -86,7 +86,6 @@
     "enrichmentError": "No pudimos enriquecer la ficha. Mostramos la información básica.",
     "whereToWatch": "Dónde verlo",
     "whereToWatchHint": "Disponibilidad en {regionName} (streaming, alquiler o compra).",
-    "inCinemas": "En cines",
     "inCinemasHint": "Actualmente en cartelera en {regionName}.",
     "cast": "Reparto",
     "trailers": "Tráilers",
