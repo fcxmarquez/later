@@ -14,6 +14,8 @@ type ProfileMenuProps = {
   onSignOut: () => void;
 };
 
+type MenuPhase = "closed" | "open" | "exit";
+
 export function ProfileMenu({
   isGuest,
   userName,
@@ -24,20 +26,44 @@ export function ProfileMenu({
   const locale = useLocale() as AppLocale;
   const pathname = usePathname();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [phase, setPhase] = useState<MenuPhase>("closed");
+  const phaseRef = useRef<MenuPhase>("closed");
   const rootRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
+  const isOpen = phase === "open";
+
+  const setMenuPhase = (next: MenuPhase) => {
+    phaseRef.current = next;
+    setPhase(next);
+  };
+
+  const openMenu = () => {
+    if (phaseRef.current === "open") return;
+    setMenuPhase("open");
+  };
+
+  const closeMenu = () => {
+    if (phaseRef.current !== "open") return;
+    setMenuPhase("exit");
+  };
+
+  const toggleMenu = () => {
+    if (phaseRef.current === "open") closeMenu();
+    else if (phaseRef.current === "closed") openMenu();
+  };
 
   useEffect(() => {
-    if (!open) return;
+    if (!isOpen) return;
 
     const onPointerDown = (event: MouseEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
+        if (phaseRef.current === "open") setMenuPhase("exit");
       }
     };
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape" && phaseRef.current === "open") {
+        setMenuPhase("exit");
+      }
     };
 
     document.addEventListener("mousedown", onPointerDown);
@@ -46,14 +72,14 @@ export function ProfileMenu({
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open]);
+  }, [isOpen]);
 
   const initial = isGuest ? "I" : userName?.charAt(0).toUpperCase() || "F";
   const label = isGuest ? t("guest") : userName || t("signedIn");
 
   const switchLocale = (nextLocale: AppLocale) => {
     if (nextLocale === locale) return;
-    setOpen(false);
+    closeMenu();
     router.replace(pathname, { locale: nextLocale });
   };
 
@@ -61,15 +87,15 @@ export function ProfileMenu({
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        className="glass flex items-center gap-2 rounded-full p-1 pr-3 transition hover:bg-white/5"
+        className="glass flex items-center gap-2 rounded-full p-1 transition hover:bg-white/5 lg:pr-3"
         aria-haspopup="menu"
-        aria-expanded={open}
+        aria-expanded={isOpen}
         aria-controls={menuId}
         title={isGuest ? t("guestMode") : t("signedIn")}
-        onClick={() => setOpen((value) => !value)}
+        onClick={toggleMenu}
       >
         <span
-          className={`grid size-8 place-items-center rounded-full text-sm font-bold ${
+          className={`grid size-8 shrink-0 place-items-center rounded-full text-sm font-bold ${
             isGuest ? "bg-white/15 text-white" : "bg-white text-black"
           }`}
         >
@@ -80,12 +106,18 @@ export function ProfileMenu({
         </span>
       </button>
 
-      {open && (
+      {phase !== "closed" && (
         <div
           id={menuId}
           role="menu"
           aria-label={label}
-          className="glass absolute top-full right-0 z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-white/10 p-1.5 shadow-2xl"
+          onAnimationEnd={(event) => {
+            if (event.target !== event.currentTarget) return;
+            if (phaseRef.current === "exit") setMenuPhase("closed");
+          }}
+          className={`profile-menu glass absolute top-full right-0 z-50 mt-2 w-56 origin-top-right overflow-hidden rounded-2xl border border-white/10 p-1.5 shadow-2xl ${
+            phase === "open" ? "is-open" : "is-exit"
+          }`}
         >
           <p className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-[0.18em] text-zinc-500 uppercase">
             {t("language")}
@@ -128,7 +160,7 @@ export function ProfileMenu({
             <Link
               href="/auth/sign-in"
               role="menuitem"
-              onClick={() => setOpen(false)}
+              onClick={closeMenu}
               className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-zinc-200 transition hover:bg-white/10"
             >
               <LogIn size={16} />
@@ -140,7 +172,7 @@ export function ProfileMenu({
               role="menuitem"
               disabled={isSigningOut}
               onClick={() => {
-                setOpen(false);
+                closeMenu();
                 onSignOut();
               }}
               className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-zinc-200 transition hover:bg-white/10 disabled:cursor-wait disabled:opacity-70"
