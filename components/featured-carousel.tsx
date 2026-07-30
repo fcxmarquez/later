@@ -1,0 +1,181 @@
+"use client";
+
+import Autoplay from "embla-carousel-autoplay";
+import useEmblaCarousel from "embla-carousel-react";
+import { Bookmark, Check, Play } from "lucide-react";
+import Image from "next/image";
+import { useTranslations } from "next-intl";
+import { useCallback, useEffect, useState } from "react";
+import { imageUrl } from "@/lib/catalog";
+import type { MediaItem } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { useWatchlist } from "@/store/watchlist";
+
+const AUTOPLAY_DELAY_MS = 6500;
+
+type FeaturedCarouselProps = {
+  items: MediaItem[];
+  onOpen: (item: MediaItem) => void;
+};
+
+export function FeaturedCarousel({ items, onOpen }: FeaturedCarouselProps) {
+  const tHome = useTranslations("Home");
+  const add = useWatchlist((state) => state.add);
+  const savedItems = useWatchlist((state) => state.items);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const canAutoplay = items.length > 1;
+  const [plugins] = useState(() => [
+    Autoplay({
+      delay: AUTOPLAY_DELAY_MS,
+      stopOnInteraction: false,
+      stopOnMouseEnter: true,
+    }),
+  ]);
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { loop: canAutoplay },
+    canAutoplay ? plugins : [],
+  );
+
+  useEffect(() => {
+    if (!emblaApi) return;
+
+    const handleSelect = () => {
+      setSelectedIndex(emblaApi.selectedScrollSnap());
+    };
+
+    emblaApi.on("select", handleSelect);
+    emblaApi.on("reInit", handleSelect);
+    return () => {
+      emblaApi.off("select", handleSelect);
+      emblaApi.off("reInit", handleSelect);
+    };
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi || !canAutoplay) return;
+
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const syncMotionPreference = () => {
+      const plugin = emblaApi.plugins().autoplay;
+      if (!plugin) return;
+      if (media.matches) plugin.stop();
+      else plugin.play();
+    };
+
+    syncMotionPreference();
+    media.addEventListener("change", syncMotionPreference);
+    return () => media.removeEventListener("change", syncMotionPreference);
+  }, [canAutoplay, emblaApi]);
+
+  const scrollTo = useCallback(
+    (index: number) => {
+      emblaApi?.scrollTo(index);
+    },
+    [emblaApi],
+  );
+
+  if (items.length === 0) return null;
+
+  return (
+    <section
+      aria-roledescription="carousel"
+      aria-label={tHome("carouselLabel")}
+      className="relative overflow-hidden"
+    >
+      <div className="overflow-hidden" ref={emblaRef}>
+        <div className="flex touch-pan-y">
+          {items.map((item, index) => {
+            const isActive = index === selectedIndex;
+            const saved = savedItems.some(
+              (entry) =>
+                entry.id === item.id && entry.mediaType === item.mediaType,
+            );
+
+            return (
+              <article
+                key={`${item.mediaType}-${item.id}`}
+                aria-roledescription="slide"
+                aria-label={tHome("carouselSlide", {
+                  current: index + 1,
+                  total: items.length,
+                })}
+                aria-hidden={!isActive}
+                inert={!isActive}
+                className="relative flex min-h-[78vh] min-w-0 shrink-0 grow-0 basis-full items-end px-5 pb-20 sm:px-10 lg:min-h-[88vh] lg:px-14 lg:pb-28"
+              >
+                <Image
+                  src={imageUrl(item.backdropPath, "backdrop")}
+                  alt={tHome("featuredAlt", { title: item.title })}
+                  fill
+                  priority={index === 0}
+                  sizes="100vw"
+                  className="object-cover object-center"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/30 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050507] via-transparent to-black/20" />
+                <div className="relative max-w-2xl">
+                  <p className="mb-4 text-xs font-bold tracking-[.32em] text-blue-300 uppercase">
+                    {tHome("eyebrow")}
+                  </p>
+                  <h1 className="text-5xl font-bold tracking-[-.05em] sm:text-7xl lg:text-8xl">
+                    {item.title}
+                  </h1>
+                  <p className="mt-5 line-clamp-3 max-w-xl text-base leading-7 text-zinc-200 sm:text-lg">
+                    {item.overview}
+                  </p>
+                  <div className="mt-7 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => onOpen(item)}
+                      className="flex items-center gap-2 rounded-full bg-white px-6 py-3.5 font-semibold text-black transition hover:scale-105"
+                    >
+                      <Play size={18} fill="currentColor" />{" "}
+                      {tHome("seeDetails")}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={saved}
+                      onClick={() => add(item)}
+                      className="glass flex items-center gap-2 rounded-full px-6 py-3.5 font-semibold disabled:opacity-70"
+                    >
+                      {saved ? <Check size={19} /> : <Bookmark size={19} />}{" "}
+                      {saved ? tHome("inYourList") : tHome("myList")}
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+
+      {canAutoplay ? (
+        <div
+          className="absolute inset-x-0 bottom-6 z-10 flex justify-center gap-2 px-5 sm:bottom-8 sm:px-10 lg:bottom-10 lg:justify-start lg:px-14"
+          role="tablist"
+          aria-label={tHome("carouselDotsLabel")}
+        >
+          {items.map((item, index) => {
+            const isActive = index === selectedIndex;
+            return (
+              <button
+                key={`${item.mediaType}-${item.id}-dot`}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-label={tHome("carouselDot", { title: item.title })}
+                onClick={() => scrollTo(index)}
+                className={cn(
+                  "h-2 rounded-full transition-[width,background-color,opacity] duration-300",
+                  isActive
+                    ? "w-7 bg-white"
+                    : "w-2 bg-white/45 hover:bg-white/70",
+                )}
+              />
+            );
+          })}
+        </div>
+      ) : null}
+    </section>
+  );
+}

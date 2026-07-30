@@ -29,6 +29,10 @@
     "seeDetails": "Ver detalles",
     "inYourList": "En tu lista",
     "myList": "Mi lista",
+    "carouselLabel": "Títulos destacados",
+    "carouselDotsLabel": "Diapositivas de títulos destacados",
+    "carouselSlide": "Diapositiva {current} de {total}",
+    "carouselDot": "Mostrar {title}",
     "sections": {
       "trending": {
         "title": "Tendencias de la semana",

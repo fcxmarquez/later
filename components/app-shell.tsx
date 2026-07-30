@@ -1,19 +1,8 @@
 "use client";
-import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Bookmark,
-  Check,
-  Compass,
-  Eye,
-  Film,
-  Play,
-  Search,
-  X,
-} from "lucide-react";
+import { Check, Compass, Eye, Film, Play, Search, X } from "lucide-react";
 import { getAuthClient } from "@/lib/auth/client";
-import { imageUrl } from "@/lib/catalog";
 import {
   clearGuestWatchlist,
   GUEST_WATCHLIST_KEY,
@@ -23,6 +12,7 @@ import { HOME_SECTION_IDS, type HomeSection } from "@/lib/tmdb";
 import type { MediaItem, SavedMedia } from "@/lib/types";
 import { type WatchlistMode, useWatchlist } from "@/store/watchlist";
 import { DetailModal } from "./detail-modal";
+import { FeaturedCarousel } from "./featured-carousel";
 import { MediaCard } from "./media-card";
 import {
   FeaturedHeroSkeleton,
@@ -30,6 +20,8 @@ import {
   SearchGridSkeleton,
 } from "./media-skeletons";
 import { ProfileMenu } from "./profile-menu";
+
+const FEATURED_SLIDE_COUNT = 6;
 
 type View = "home" | "search" | "list";
 
@@ -65,17 +57,19 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
   const isHomeLoading = loadedHomeLocale !== locale;
   const isSearching = view === "search" && resolvedSearchKey !== searchKey;
   const items = useWatchlist((state) => state.items);
-  const add = useWatchlist((state) => state.add);
   const initialize = useWatchlist((state) => state.initialize);
   const error = useWatchlist((state) => state.error);
   const clearError = useWatchlist((state) => state.clearError);
-  const featured =
-    homeSections.find((section) => section.id === "trending")?.results[0] ??
-    homeSections[0]?.results[0] ??
-    null;
-  const hasFeatured = useWatchlist((state) =>
-    featured ? state.has(featured) : false,
-  );
+  const featuredItems = useMemo(() => {
+    const trending = homeSections.find(
+      (section) => section.id === "trending",
+    )?.results;
+    const source =
+      trending && trending.length > 0
+        ? trending
+        : (homeSections[0]?.results ?? []);
+    return source.slice(0, FEATURED_SLIDE_COUNT);
+  }, [homeSections]);
   useEffect(() => {
     initialize(initialWatchlist, mode);
     if (isGuest || legacyMigrationStarted.current) return;
@@ -250,7 +244,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
                 {tHome("loadErrorBody")}
               </p>
             </section>
-          ) : !featured ? (
+          ) : featuredItems.length === 0 ? (
             <section className="flex min-h-[70vh] flex-col items-center justify-center px-5 text-center sm:px-10">
               <Film size={34} className="text-zinc-600" />
               <h2 className="mt-4 text-xl font-semibold">
@@ -262,50 +256,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
             </section>
           ) : (
             <>
-              <section className="relative flex min-h-[78vh] items-end overflow-hidden px-5 pb-16 sm:px-10 lg:min-h-[88vh] lg:px-14 lg:pb-24">
-                <Image
-                  src={imageUrl(featured.backdropPath, "backdrop")}
-                  alt={tHome("featuredAlt", { title: featured.title })}
-                  fill
-                  priority
-                  sizes="100vw"
-                  className="object-cover object-center"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/30 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#050507] via-transparent to-black/20" />
-                <div className="relative max-w-2xl">
-                  <p className="mb-4 text-xs font-bold tracking-[.32em] text-blue-300 uppercase">
-                    {tHome("eyebrow")}
-                  </p>
-                  <h1 className="text-5xl font-bold tracking-[-.05em] sm:text-7xl lg:text-8xl">
-                    {featured.title}
-                  </h1>
-                  <p className="mt-5 max-w-xl text-base leading-7 text-zinc-200 sm:text-lg">
-                    {featured.overview}
-                  </p>
-                  <div className="mt-7 flex gap-3">
-                    <button
-                      onClick={() => setSelected(featured)}
-                      className="flex items-center gap-2 rounded-full bg-white px-6 py-3.5 font-semibold text-black transition hover:scale-105"
-                    >
-                      <Play size={18} fill="currentColor" />{" "}
-                      {tHome("seeDetails")}
-                    </button>
-                    <button
-                      disabled={hasFeatured}
-                      onClick={() => add(featured)}
-                      className="glass flex items-center gap-2 rounded-full px-6 py-3.5 font-semibold disabled:opacity-70"
-                    >
-                      {hasFeatured ? (
-                        <Check size={19} />
-                      ) : (
-                        <Bookmark size={19} />
-                      )}{" "}
-                      {hasFeatured ? tHome("inYourList") : tHome("myList")}
-                    </button>
-                  </div>
-                </div>
-              </section>
+              <FeaturedCarousel items={featuredItems} onOpen={setSelected} />
               {homeSections.map((section) => (
                 <MediaRow
                   key={section.id}
