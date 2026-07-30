@@ -29,6 +29,10 @@
     "seeDetails": "See details",
     "inYourList": "In your list",
     "myList": "My list",
+    "carouselLabel": "Featured titles",
+    "carouselDotsLabel": "Featured title slides",
+    "carouselSlide": "Slide {current} of {total}",
+    "carouselDot": "Show {title}",
     "sections": {
       "trending": {
         "title": "Trending this week",
