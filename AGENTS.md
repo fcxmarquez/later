@@ -18,7 +18,7 @@ Run these in order and fix any failures before you commit or push:
 ### Guest mode vs. auth mode (non-obvious)
 
 - The app has two modes. **Guest mode** (manage watchlist in LocalStorage; browse catalog when `TMDB_API_TOKEN` is set) needs no auth services. **Authenticated cloud sync** needs Neon Postgres + Neon Auth + Google OAuth.
-- `isAuthConfigured()` in `lib/auth/config.ts` returns true when `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET` (≥32 chars), and `AUTH_ALLOWED_EMAIL` are all set. Copying `.env.example` verbatim into `.env.local` satisfies this check with placeholder values, which activates the auth proxy against a non-working Neon endpoint. For guest-mode local dev/testing, leave those auth vars UNSET in `.env.local` so `proxy.ts` short-circuits to guest access.
+- `isAuthConfigured()` in `lib/auth/config.ts` returns true when `NEON_AUTH_BASE_URL` and `NEON_AUTH_COOKIE_SECRET` (≥32 chars) are set. Copying `.env.example` verbatim into `.env.local` satisfies this check with placeholder values, which activates the auth proxy against a non-working Neon endpoint. For guest-mode local dev/testing, leave those auth vars UNSET in `.env.local` so `proxy.ts` short-circuits to guest access.
 - `TMDB_API_TOKEN` is required for the live catalog and title details. Without it, `/api/tmdb` returns an empty catalog (503) and the UI shows loading skeletons then an error/empty state. Guest watchlist LocalStorage still works offline.
 
 ### Commit

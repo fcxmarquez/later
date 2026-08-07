@@ -137,20 +137,12 @@
     "bodyGuestOnly": "Google sign-in isn't configured in this environment. You can continue as a guest and keep your list on this device.",
     "continueGuest": "Continue as guest",
     "oauthError": "Google couldn't complete sign-in. Please try again.",
-    "footnote": "Cloud sync requires an authorized account."
+    "footnote": "Cloud sync keeps your list private to your Google account."
   },
   "GoogleSignIn": {
     "continue": "Continue with Google",
     "opening": "Opening Google…",
     "failed": "Couldn't sign in with Google.",
     "connectFailed": "Couldn't connect to Google. Please try again."
-  },
-  "Restricted": {
-    "eyebrow": "Restricted access",
-    "title": "This account doesn't have access.",
-    "body": "Later is only available for the authorized account.",
-    "signingOut": "Signing out…",
-    "tryAnother": "Try another account",
-    "continueGuest": "Continue as guest"
   }
 }

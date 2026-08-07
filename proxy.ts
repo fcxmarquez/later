@@ -6,7 +6,7 @@ import { isAppLocale, routing } from "@/i18n/routing";
 
 const handleI18nRouting = createMiddleware(routing);
 
-const GUEST_ALLOWED_PATHS = new Set(["/", "/auth/unauthorized"]);
+const GUEST_ALLOWED_PATHS = new Set(["/"]);
 
 function pathnameHasLocale(pathname: string) {
   return routing.locales.some(

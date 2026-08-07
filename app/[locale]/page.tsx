@@ -1,9 +1,8 @@
 import { AppShell } from "@/components/app-shell";
-import { isAllowedUser, isAuthConfigured } from "@/lib/auth/config";
+import { isAuthConfigured } from "@/lib/auth/config";
 import { getAuth } from "@/lib/auth/server";
 import { getWatchlist } from "@/lib/watchlist";
 import { resolveLocale } from "@/i18n/locale";
-import { redirect } from "@/i18n/navigation";
 import { setRequestLocale } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
@@ -24,10 +23,6 @@ export default async function Home({
   const { data: session } = await getAuth().getSession();
 
   if (session?.user) {
-    if (!isAllowedUser(session.user)) {
-      redirect({ href: "/auth/unauthorized", locale });
-    }
-
     const initialWatchlist = await getWatchlist(session.user.id);
 
     return (
