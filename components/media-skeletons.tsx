@@ -30,10 +30,10 @@ export function MediaRowSkeleton({
   count?: number;
 }) {
   return (
-    <section className="mb-16 pl-5 sm:pl-10 lg:pl-14">
+    <section className="safe-page-left mb-16">
       <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h2>
       <p className="mt-1 text-sm text-zinc-500">{subtitle}</p>
-      <div className="hide-scrollbar mt-6 flex gap-4 overflow-x-auto pr-5 pb-8 sm:gap-5 sm:pr-10 lg:pr-14">
+      <div className="safe-page-right hide-scrollbar mt-6 flex gap-4 overflow-x-auto pb-8 sm:gap-5">
         {Array.from({ length: count }, (_, index) => (
           <MediaCardSkeleton key={index} />
         ))}
@@ -44,7 +44,7 @@ export function MediaRowSkeleton({
 
 export function FeaturedHeroSkeleton() {
   return (
-    <section className="relative flex min-h-[78vh] items-end overflow-hidden px-5 pb-20 sm:px-10 lg:min-h-[88vh] lg:px-14 lg:pb-28">
+    <section className="safe-page-x relative flex min-h-[78vh] items-end overflow-hidden pb-20 supports-[height:100svh]:min-h-[78svh] lg:min-h-[88vh] lg:pb-28 supports-[height:100svh]:lg:min-h-[88svh]">
       <Skeleton className="absolute inset-0 rounded-none bg-white/5" />
       <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#050507] via-transparent to-black/20" />
@@ -58,7 +58,7 @@ export function FeaturedHeroSkeleton() {
           <Skeleton className="h-12 w-36 rounded-full bg-white/10" />
         </div>
       </div>
-      <div className="absolute inset-x-0 bottom-6 z-10 flex justify-center gap-2 px-5 sm:bottom-8 sm:px-10 lg:bottom-10 lg:justify-start lg:px-14">
+      <div className="safe-page-x absolute inset-x-0 bottom-6 z-10 flex justify-center gap-2 sm:bottom-8 lg:bottom-10 lg:justify-start">
         <Skeleton className="h-2 w-7 rounded-full bg-white/20" />
         {Array.from({ length: 5 }, (_, index) => (
           <Skeleton key={index} className="h-2 w-2 rounded-full bg-white/10" />

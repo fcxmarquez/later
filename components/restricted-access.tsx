@@ -17,7 +17,7 @@ export function RestrictedAccess() {
   }, []);
 
   return (
-    <main className="grid min-h-screen place-items-center px-5 py-10">
+    <main className="safe-page-x grid min-h-screen place-items-center pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2.5rem,env(safe-area-inset-bottom))] supports-[height:100dvh]:min-h-dvh">
       <section className="glass w-full max-w-md rounded-[32px] border border-white/10 p-8 text-center shadow-2xl max-[359px]:p-6 sm:p-10">
         <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-amber-300/10 text-amber-200 ring-1 ring-amber-300/20">
           <LockKeyhole size={25} />

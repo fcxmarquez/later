@@ -101,7 +101,7 @@ export function FeaturedCarousel({ items, onOpen }: FeaturedCarouselProps) {
                 })}
                 aria-hidden={!isActive}
                 inert={!isActive}
-                className="relative flex min-h-[78vh] min-w-0 shrink-0 grow-0 basis-full items-end px-5 pb-20 sm:px-10 lg:min-h-[88vh] lg:px-14 lg:pb-28"
+                className="safe-page-x relative flex min-h-[78vh] min-w-0 shrink-0 grow-0 basis-full items-end pb-20 supports-[height:100svh]:min-h-[78svh] lg:min-h-[88vh] lg:pb-28 supports-[height:100svh]:lg:min-h-[88svh]"
               >
                 <Image
                   src={imageUrl(item.backdropPath, "backdrop")}
@@ -151,7 +151,7 @@ export function FeaturedCarousel({ items, onOpen }: FeaturedCarouselProps) {
 
       {canAutoplay ? (
         <div
-          className="absolute inset-x-0 bottom-2 z-10 flex justify-center gap-0 px-5 sm:bottom-4 sm:gap-1 sm:px-10 lg:bottom-6 lg:justify-start lg:px-14"
+          className="safe-page-x absolute inset-x-0 bottom-2 z-10 flex justify-center gap-0 sm:bottom-4 sm:gap-1 lg:bottom-6 lg:justify-start"
           role="tablist"
           aria-label={tHome("carouselDotsLabel")}
         >

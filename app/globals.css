@@ -6,6 +6,8 @@
 
 :root {
   color-scheme: dark;
+  --page-gutter: 1.25rem;
+  --detail-gutter: 1.25rem;
   /* App is always dark — seed :root with the dark palette. */
   --background: #050507;
   --foreground: #f5f5f7;
@@ -40,6 +42,18 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+@media (min-width: 40rem) {
+  :root {
+    --page-gutter: 2.5rem;
+    --detail-gutter: 2.5rem;
+  }
+}
+@media (min-width: 64rem) {
+  :root {
+    --page-gutter: 3.5rem;
+    --detail-gutter: 4rem;
+  }
+}
 * {
   box-sizing: border-box;
 }
@@ -49,6 +63,20 @@ html {
 body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
+}
+.safe-page-x {
+  padding-left: max(var(--page-gutter), env(safe-area-inset-left));
+  padding-right: max(var(--page-gutter), env(safe-area-inset-right));
+}
+.safe-page-left {
+  padding-left: max(var(--page-gutter), env(safe-area-inset-left));
+}
+.safe-page-right {
+  padding-right: max(var(--page-gutter), env(safe-area-inset-right));
+}
+.safe-detail-x {
+  padding-left: max(var(--detail-gutter), env(safe-area-inset-left));
+  padding-right: max(var(--detail-gutter), env(safe-area-inset-right));
 }
 button,
 input {

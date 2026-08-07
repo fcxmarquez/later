@@ -35,7 +35,7 @@ export default async function SignInPage({
   const { error } = await searchParams;
 
   return (
-    <main className="relative grid min-h-screen place-items-center overflow-hidden px-5 py-10">
+    <main className="safe-page-x relative grid min-h-screen place-items-center overflow-hidden pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2.5rem,env(safe-area-inset-bottom))] supports-[height:100dvh]:min-h-dvh">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,.22),transparent_35%),radial-gradient(circle_at_80%_75%,rgba(124,58,237,.18),transparent_38%),linear-gradient(145deg,#050507,#101017_52%,#050507)]" />
       <div className="absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.035)_1px,transparent_1px)] [background-size:48px_48px] opacity-30" />
 

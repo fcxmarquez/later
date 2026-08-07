@@ -67,13 +67,22 @@ Avoid stacking padding and margin that accidentally doubles the intended gap.
 
 ## Fixed and overlay UI
 
+- Use `100dvh` for full-screen surfaces, with `100vh` as the fallback. Use
+  `svh` for stable immersive heroes that should not resize as mobile browser
+  chrome expands or collapses.
+- When `viewport-fit=cover` is enabled, keep meaningful content and fixed
+  controls clear of `env(safe-area-inset-*)`. Decorative backgrounds may
+  continue edge-to-edge.
 - Fixed mobile navigation requires sufficient page-bottom padding so the final
-  content cannot be obscured. The current app shell uses 112px (`pb-28`).
+  content cannot be obscured. Include `safe-area-inset-bottom` in that reserved
+  space when the navigation is fixed above the home indicator.
 - Toasts and alerts must clear the mobile navigation, but should return to a
   normal 24px edge offset on `sm` and larger screens.
 - Modals must fit within the viewport, scroll internally, preserve at least 24px
   mobile content padding, and keep the final action clear of the bottom edge.
 - Fixed headers must not overlap the first page heading or hero controls.
+- Test short landscape screens and mobile browser chrome expansion in addition
+  to portrait viewport dimensions. Keyboard-open states must remain scrollable.
 
 ## Authentication and compact screens
 

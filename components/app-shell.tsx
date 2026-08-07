@@ -183,8 +183,8 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
     }
   };
   return (
-    <main className="min-h-screen pb-28">
-      <header className="fixed inset-x-0 top-0 z-40 flex h-20 items-center justify-between bg-gradient-to-b from-black/85 to-transparent px-5 sm:px-10 lg:px-14">
+    <main className="min-h-screen pb-[calc(7rem+env(safe-area-inset-bottom))] supports-[height:100dvh]:min-h-dvh">
+      <header className="safe-page-x fixed inset-x-0 top-0 z-40 flex h-[calc(5rem+env(safe-area-inset-top))] items-center justify-between bg-gradient-to-b from-black/85 to-transparent pt-[env(safe-area-inset-top)]">
         <button
           onClick={() => nav("home")}
           className="flex min-h-11 items-center gap-2 text-xl font-bold tracking-tight"
@@ -235,7 +235,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
               ))}
             </>
           ) : homeError ? (
-            <section className="flex min-h-[70vh] flex-col items-center justify-center px-5 text-center sm:px-10">
+            <section className="safe-page-x flex min-h-[70vh] flex-col items-center justify-center text-center supports-[height:100svh]:min-h-[70svh]">
               <Film size={34} className="text-zinc-600" />
               <h2 className="mt-4 text-xl font-semibold">
                 {tHome("loadErrorTitle")}
@@ -245,7 +245,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
               </p>
             </section>
           ) : featuredItems.length === 0 ? (
-            <section className="flex min-h-[70vh] flex-col items-center justify-center px-5 text-center sm:px-10">
+            <section className="safe-page-x flex min-h-[70vh] flex-col items-center justify-center text-center supports-[height:100svh]:min-h-[70svh]">
               <Film size={34} className="text-zinc-600" />
               <h2 className="mt-4 text-xl font-semibold">
                 {tHome("emptyTitle")}
@@ -272,7 +272,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
       )}
 
       {view === "search" && (
-        <section className="px-5 pt-32 sm:px-10 lg:px-14">
+        <section className="safe-page-x pt-32">
           <p className="text-xs font-bold tracking-[.3em] text-blue-400 uppercase">
             {tSearch("eyebrow")}
           </p>
@@ -340,7 +340,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
       )}
 
       {view === "list" && (
-        <section className="px-5 pt-32 sm:px-10 lg:px-14">
+        <section className="safe-page-x pt-32">
           <p className="text-xs font-bold tracking-[.3em] text-blue-400 uppercase">
             {tList("eyebrow")}
           </p>
@@ -441,7 +441,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
         </section>
       )}
 
-      <nav className="glass fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 gap-1 rounded-full p-1.5 shadow-2xl sm:hidden">
+      <nav className="glass fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 z-40 flex -translate-x-1/2 gap-1 rounded-full p-1.5 shadow-2xl sm:hidden">
         {(
           [
             ["home", Compass, tNav("home")],
@@ -462,7 +462,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
       {error && (
         <div
           role="alert"
-          className="fixed bottom-24 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between gap-4 rounded-2xl border border-red-400/20 bg-red-950/95 px-4 py-3 text-sm text-red-100 shadow-2xl backdrop-blur sm:bottom-6"
+          className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex w-[calc(100%-max(1rem,env(safe-area-inset-left))-max(1rem,env(safe-area-inset-right)))] max-w-md -translate-x-1/2 items-center justify-between gap-4 rounded-2xl border border-red-400/20 bg-red-950/95 px-4 py-3 text-sm text-red-100 shadow-2xl backdrop-blur sm:bottom-6"
         >
           <span>{tErrors(error)}</span>
           <button
@@ -491,10 +491,10 @@ function MediaRow({
   open: (item: MediaItem) => void;
 }) {
   return (
-    <section className="mb-16 pl-5 sm:pl-10 lg:pl-14">
+    <section className="safe-page-left mb-16">
       <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h2>
       <p className="mt-1 text-sm text-zinc-500">{subtitle}</p>
-      <div className="hide-scrollbar mt-6 flex gap-4 overflow-x-auto pr-5 pb-8 sm:gap-5 sm:pr-10 lg:pr-14">
+      <div className="safe-page-right hide-scrollbar mt-6 flex gap-4 overflow-x-auto pb-8 sm:gap-5">
         {items.map((item) => (
           <MediaCard
             key={`${title}-${item.mediaType}-${item.id}`}
