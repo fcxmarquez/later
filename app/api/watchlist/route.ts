@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { isAllowedUser } from "@/lib/auth/config";
 import { getAuth } from "@/lib/auth/server";
 import type { MediaItem, MediaType } from "@/lib/types";
 import {
@@ -19,15 +18,6 @@ async function getAuthorizedUserId() {
   if (!session?.user) {
     return {
       response: NextResponse.json({ error: "No autenticado" }, { status: 401 }),
-    };
-  }
-
-  if (!isAllowedUser(session.user)) {
-    return {
-      response: NextResponse.json(
-        { error: "Acceso denegado" },
-        { status: 403 },
-      ),
     };
   }
 

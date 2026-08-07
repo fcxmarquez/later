@@ -1,6 +1,6 @@
 # Later
 
-A private movie and TV watchlist built with Next.js, Tailwind CSS, Zustand, Neon Auth, and Postgres.
+A movie and TV watchlist with optional Google sign-in, built with Next.js, Tailwind CSS, Zustand, Neon Auth, and Postgres.
 
 ## Development
 
@@ -10,9 +10,9 @@ cp .env.example .env.local
 pnpm run dev
 ```
 
-Set `DATABASE_URL` to Neon’s pooled connection, `DATABASE_URL_UNPOOLED` to the direct URL (without `-pooler`, used by migrations), `NEON_AUTH_BASE_URL` to the branch Auth URL, generate `NEON_AUTH_COOKIE_SECRET` with `openssl rand -base64 32`, and set the allowed private account in `AUTH_ALLOWED_EMAIL`. Add a TMDB read token as `TMDB_API_TOKEN` to load the live catalog; without it the catalog API returns empty and the UI shows skeletons then an error/empty state.
+Set `DATABASE_URL` to Neon’s pooled connection, `DATABASE_URL_UNPOOLED` to the direct URL (without `-pooler`, used by migrations), `NEON_AUTH_BASE_URL` to the branch Auth URL, and generate `NEON_AUTH_COOKIE_SECRET` with `openssl rand -base64 32`. Add a TMDB read token as `TMDB_API_TOKEN` to load the live catalog; without it the catalog API returns empty and the UI shows skeletons then an error/empty state.
 
-You can use the app as a guest without signing in: in that mode the watchlist is stored in the browser’s LocalStorage. Cloud sync (Neon Auth + Postgres) is limited to the account configured privately on the server. Users and sessions live in the managed `neon_auth` schema; the authenticated list and watched/pending state live in `public.watchlist_items`, keyed by user ID. The client keeps optimistic updates and, on sign-in, migrates LocalStorage data to Postgres once.
+You can use the app as a guest without signing in: in that mode the watchlist is stored in the browser’s LocalStorage. Any Google user can sign in for cloud sync with Neon Auth and Postgres. Users and sessions live in the managed `neon_auth` schema; each authenticated list and watched/pending state live in `public.watchlist_items`, isolated by user ID. The client keeps optimistic updates and, on sign-in, migrates LocalStorage data to that user's Postgres watchlist once.
 
 The Postgres schema is defined with Drizzle in `db/schema.ts`. After changing the schema:
 

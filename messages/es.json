@@ -137,20 +137,12 @@
     "bodyGuestOnly": "El login con Google aún no está configurado en este entorno. Puedes continuar como invitado y guardar tu lista en este dispositivo.",
     "continueGuest": "Continuar como invitado",
     "oauthError": "Google no pudo completar el inicio de sesión. Inténtalo de nuevo.",
-    "footnote": "La sincronización en la nube requiere una cuenta autorizada."
+    "footnote": "La sincronización mantiene tu lista privada en tu cuenta de Google."
   },
   "GoogleSignIn": {
     "continue": "Continuar con Google",
     "opening": "Abriendo Google…",
     "failed": "No se pudo iniciar sesión con Google.",
     "connectFailed": "No se pudo conectar con Google. Inténtalo de nuevo."
-  },
-  "Restricted": {
-    "eyebrow": "Acceso restringido",
-    "title": "Esta cuenta no tiene acceso.",
-    "body": "Later está disponible únicamente para la cuenta autorizada.",
-    "signingOut": "Cerrando sesión…",
-    "tryAnother": "Probar con otra cuenta",
-    "continueGuest": "Continuar como invitado"
   }
 }

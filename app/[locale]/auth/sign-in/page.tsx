@@ -3,7 +3,7 @@ import { resolveLocale } from "@/i18n/locale";
 import { Play } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
-import { isAllowedUser, isAuthConfigured } from "@/lib/auth/config";
+import { isAuthConfigured } from "@/lib/auth/config";
 import { getAuth } from "@/lib/auth/server";
 
 export const dynamic = "force-dynamic";
@@ -25,10 +25,7 @@ export default async function SignInPage({
     const { data: session } = await getAuth().getSession();
 
     if (session?.user) {
-      redirect({
-        href: isAllowedUser(session.user) ? "/" : "/auth/unauthorized",
-        locale,
-      });
+      redirect({ href: "/", locale });
     }
   }
 
