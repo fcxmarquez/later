@@ -1,8 +1,18 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function MediaCardSkeleton() {
+export function MediaCardSkeleton({
+  layout = "rail",
+}: {
+  layout?: "grid" | "rail";
+} = {}) {
   return (
-    <div className="w-[155px] shrink-0 sm:w-[190px] lg:w-[215px]">
+    <div
+      className={
+        layout === "grid"
+          ? "w-full min-w-0"
+          : "w-[155px] shrink-0 sm:w-[190px] lg:w-[215px]"
+      }
+    >
       <Skeleton className="aspect-[2/3] w-full rounded-2xl bg-white/10" />
       <Skeleton className="mt-3 h-4 w-[80%] rounded-full bg-white/10" />
       <Skeleton className="mt-2 h-3 w-1/2 rounded-full bg-white/10" />
@@ -60,9 +70,9 @@ export function FeaturedHeroSkeleton() {
 
 export function SearchGridSkeleton({ count = 12 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-9 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+    <div className="grid grid-cols-2 gap-x-4 gap-y-9 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
       {Array.from({ length: count }, (_, index) => (
-        <MediaCardSkeleton key={index} />
+        <MediaCardSkeleton key={index} layout="grid" />
       ))}
     </div>
   );

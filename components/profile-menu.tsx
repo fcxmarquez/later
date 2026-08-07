@@ -87,7 +87,7 @@ export function ProfileMenu({
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        className="glass flex items-center gap-2 rounded-full p-1 transition hover:bg-white/5 lg:pr-3"
+        className="glass flex min-h-11 min-w-11 items-center gap-2 rounded-full p-1 transition hover:bg-white/5 lg:pr-3"
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-controls={menuId}
@@ -137,7 +137,7 @@ export function ProfileMenu({
                   aria-checked={active}
                   disabled={active}
                   onClick={() => switchLocale(nextLocale)}
-                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition ${
+                  className={`flex min-h-11 w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition ${
                     active
                       ? "bg-white text-black"
                       : "text-zinc-200 hover:bg-white/10"
@@ -161,7 +161,7 @@ export function ProfileMenu({
               href="/auth/sign-in"
               role="menuitem"
               onClick={closeMenu}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-zinc-200 transition hover:bg-white/10"
+              className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-zinc-200 transition hover:bg-white/10"
             >
               <LogIn size={16} />
               {t("signIn")}
@@ -175,7 +175,7 @@ export function ProfileMenu({
                 closeMenu();
                 onSignOut();
               }}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-zinc-200 transition hover:bg-white/10 disabled:cursor-wait disabled:opacity-70"
+              className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-zinc-200 transition hover:bg-white/10 disabled:cursor-wait disabled:opacity-70"
             >
               {isSigningOut ? (
                 <LoaderCircle className="animate-spin" size={16} />

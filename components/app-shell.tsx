@@ -187,7 +187,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
       <header className="fixed inset-x-0 top-0 z-40 flex h-20 items-center justify-between bg-gradient-to-b from-black/85 to-transparent px-5 sm:px-10 lg:px-14">
         <button
           onClick={() => nav("home")}
-          className="flex items-center gap-2 text-xl font-bold tracking-tight"
+          className="flex min-h-11 items-center gap-2 text-xl font-bold tracking-tight"
         >
           <span className="grid size-9 place-items-center rounded-xl bg-white text-black">
             <Play size={17} fill="currentColor" />
@@ -205,7 +205,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
             <button
               key={key}
               onClick={() => nav(key)}
-              className={`rounded-full px-5 py-2 text-sm transition ${view === key ? "bg-white text-black" : "text-zinc-300 hover:text-white"}`}
+              className={`min-h-11 rounded-full px-5 py-2 text-sm transition ${view === key ? "bg-white text-black" : "text-zinc-300 hover:text-white"}`}
             >
               {label}
             </button>
@@ -287,7 +287,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={tSearch("placeholder")}
-              className="min-w-0 flex-1 bg-transparent py-2 text-lg outline-none placeholder:text-zinc-600"
+              className="min-h-11 min-w-0 flex-1 bg-transparent py-2 text-lg outline-none placeholder:text-zinc-600"
             />
             {query && (
               <button
@@ -314,11 +314,12 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
                 </p>
               </div>
             ) : searchResults.length ? (
-              <div className="grid grid-cols-2 gap-x-4 gap-y-9 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-9 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
                 {searchResults.map((item) => (
                   <MediaCard
                     key={`${item.mediaType}-${item.id}`}
                     item={item}
+                    layout="grid"
                     onOpen={setSelected}
                   />
                 ))}
@@ -364,7 +365,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
                 <button
                   key={key}
                   onClick={() => setFilter(key)}
-                  className={`rounded-full px-4 py-2 text-sm ${filter === key ? "bg-white text-black" : "text-zinc-400"}`}
+                  className={`min-h-11 rounded-full px-4 py-2 text-sm ${filter === key ? "bg-white text-black" : "text-zinc-400"}`}
                 >
                   {label}
                 </button>
@@ -372,11 +373,12 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
             </div>
           </div>
           {list.length ? (
-            <div className="mt-12 grid grid-cols-2 gap-x-4 gap-y-9 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <div className="mt-12 grid grid-cols-2 gap-x-4 gap-y-9 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
               {list.map((item) => (
                 <MediaCard
                   key={`${item.mediaType}-${item.id}`}
                   item={item}
+                  layout="grid"
                   onOpen={setSelected}
                 />
               ))}
@@ -460,13 +462,13 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
       {error && (
         <div
           role="alert"
-          className="fixed bottom-24 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between gap-4 rounded-2xl border border-red-400/20 bg-red-950/95 px-4 py-3 text-sm text-red-100 shadow-2xl backdrop-blur"
+          className="fixed bottom-24 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between gap-4 rounded-2xl border border-red-400/20 bg-red-950/95 px-4 py-3 text-sm text-red-100 shadow-2xl backdrop-blur sm:bottom-6"
         >
           <span>{tErrors(error)}</span>
           <button
             type="button"
             onClick={clearError}
-            className="grid size-8 shrink-0 place-items-center rounded-full hover:bg-white/10"
+            className="grid size-11 shrink-0 place-items-center rounded-full hover:bg-white/10"
             aria-label={tErrors("dismiss")}
           >
             <X size={17} />

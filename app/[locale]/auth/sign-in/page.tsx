@@ -39,7 +39,7 @@ export default async function SignInPage({
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,.22),transparent_35%),radial-gradient(circle_at_80%_75%,rgba(124,58,237,.18),transparent_38%),linear-gradient(145deg,#050507,#101017_52%,#050507)]" />
       <div className="absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.035)_1px,transparent_1px)] [background-size:48px_48px] opacity-30" />
 
-      <section className="glass relative w-full max-w-md rounded-[32px] border border-white/10 p-7 shadow-2xl sm:p-10">
+      <section className="glass relative w-full max-w-md rounded-[32px] border border-white/10 p-7 shadow-2xl max-[359px]:p-6 sm:p-10">
         <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-white text-black shadow-lg shadow-white/10">
           <Play size={24} fill="currentColor" />
         </div>
@@ -57,7 +57,7 @@ export default async function SignInPage({
           {authReady ? <GoogleSignInButton /> : null}
           <Link
             href="/"
-            className="flex w-full items-center justify-center rounded-full bg-white/10 px-5 py-3.5 font-semibold text-white ring-1 ring-white/10 transition hover:bg-white/15"
+            className="flex w-full items-center justify-center rounded-full bg-white/10 px-5 py-3.5 font-semibold text-white ring-1 ring-white/10 transition hover:bg-white/15 max-[359px]:px-4 max-[359px]:text-sm"
           >
             {t("continueGuest")}
           </Link>
