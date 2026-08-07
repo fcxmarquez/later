@@ -6,12 +6,25 @@ import { imageUrl } from "@/lib/catalog";
 import { MediaItem } from "@/lib/types";
 import { useWatchlist } from "@/store/watchlist";
 
+const GRID_IMAGE_SIZES = [
+  "(min-width: 1536px) calc((100vw - 208px) / 7)",
+  "(min-width: 1280px) calc((100vw - 192px) / 6)",
+  "(min-width: 1024px) calc((100vw - 176px) / 5)",
+  "(min-width: 768px) calc((100vw - 128px) / 4)",
+  "(min-width: 640px) calc((100vw - 112px) / 3)",
+  "calc((100vw - 56px) / 2)",
+].join(", ");
+const RAIL_IMAGE_SIZES =
+  "(min-width: 1024px) 215px, (min-width: 640px) 190px, 155px";
+
 export function MediaCard({
   item,
   onOpen,
+  layout = "rail",
 }: {
   item: MediaItem;
   onOpen: (item: MediaItem) => void;
+  layout?: "grid" | "rail";
 }) {
   const t = useTranslations("MediaCard");
   const tCommon = useTranslations("Common");
@@ -22,7 +35,9 @@ export function MediaCard({
   );
   const add = useWatchlist((state) => state.add);
   return (
-    <article className="group relative w-[155px] shrink-0 sm:w-[190px] lg:w-[215px]">
+    <article
+      className={`group relative ${layout === "grid" ? "w-full min-w-0" : "w-[155px] shrink-0 sm:w-[190px] lg:w-[215px]"}`}
+    >
       <button
         type="button"
         onClick={() => onOpen(item)}
@@ -34,7 +49,7 @@ export function MediaCard({
           src={imageUrl(item.posterPath)}
           alt={t("posterAlt", { title: item.title })}
           fill
-          sizes="215px"
+          sizes={layout === "grid" ? GRID_IMAGE_SIZES : RAIL_IMAGE_SIZES}
           className="object-cover transition duration-700 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-50 group-hover:opacity-100" />
@@ -44,7 +59,7 @@ export function MediaCard({
           onClick={() => {
             if (!saved) add(item);
           }}
-          className="absolute right-3 bottom-3 z-20 grid size-11 cursor-pointer place-items-center rounded-full bg-white text-black opacity-100 shadow-lg transition hover:scale-110 disabled:cursor-default sm:size-10 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+          className="absolute right-3 bottom-3 z-20 grid size-11 cursor-pointer place-items-center rounded-full bg-white text-black opacity-100 shadow-lg transition hover:scale-110 disabled:cursor-default sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
           aria-label={saved ? t("alreadySaved") : t("addToList")}
         >
           {saved ? <Check size={19} /> : <Plus size={20} />}

@@ -40,7 +40,7 @@ export function GoogleSignInButton() {
         type="button"
         onClick={signIn}
         disabled={isPending}
-        className="flex w-full items-center justify-center gap-3 rounded-full bg-white px-5 py-3.5 font-semibold text-black transition hover:scale-[1.02] disabled:cursor-wait disabled:opacity-70"
+        className="flex w-full items-center justify-center gap-3 rounded-full bg-white px-5 py-3.5 font-semibold text-black transition hover:scale-[1.02] disabled:cursor-wait disabled:opacity-70 max-[359px]:gap-2 max-[359px]:px-3 max-[359px]:text-sm max-[359px]:whitespace-nowrap"
       >
         {isPending ? (
           <LoaderCircle className="animate-spin" size={20} />
@@ -60,7 +60,12 @@ export function GoogleSignInButton() {
 
 function GoogleIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none">
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="size-5 shrink-0"
+      fill="none"
+    >
       <path
         fill="#4285F4"
         d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.4a4.6 4.6 0 0 1-2 3v2.5h3.3c1.9-1.8 2.9-4.4 2.9-7.4Z"

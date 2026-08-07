@@ -359,7 +359,7 @@ function TrailerLightbox({
           event.stopPropagation();
           requestClose();
         }}
-        className="glass absolute top-5 right-5 z-20 grid size-11 place-items-center rounded-full transition hover:bg-white hover:text-black sm:top-7 sm:right-8"
+        className="glass absolute top-[max(1.25rem,env(safe-area-inset-top))] right-[max(1.25rem,env(safe-area-inset-right))] z-20 grid size-11 place-items-center rounded-full transition hover:bg-white hover:text-black sm:top-[max(1.75rem,env(safe-area-inset-top))] sm:right-[max(2rem,env(safe-area-inset-right))]"
         aria-label={t("closeTrailer")}
       >
         <X />
@@ -707,9 +707,9 @@ export function DetailModal({
         aria-describedby={descriptionId}
         onClick={(event) => event.stopPropagation()}
         onAnimationEnd={onPanelAnimationEnd}
-        className="detail-panel absolute inset-0 overflow-y-auto overscroll-contain bg-[#07070a]"
+        className="detail-panel absolute inset-0 min-h-screen overflow-y-auto overscroll-contain bg-[#07070a] supports-[height:100dvh]:min-h-dvh"
       >
-        <div className="relative min-h-[72vh] bg-black sm:min-h-[78vh]">
+        <div className="relative min-h-[72vh] bg-black supports-[height:100svh]:min-h-[72svh] sm:min-h-[78vh] supports-[height:100svh]:sm:min-h-[78svh]">
           {view.backdropPath ? (
             <HeroBackdrop
               key={view.backdropPath}
@@ -724,13 +724,13 @@ export function DetailModal({
             ref={closeButtonRef}
             type="button"
             onClick={requestClose}
-            className="glass absolute top-5 right-5 z-20 grid size-11 place-items-center rounded-full transition hover:bg-white hover:text-black sm:top-7 sm:right-8"
+            className="glass absolute top-[max(1.25rem,env(safe-area-inset-top))] right-[max(1.25rem,env(safe-area-inset-right))] z-20 grid size-11 place-items-center rounded-full transition hover:bg-white hover:text-black sm:top-[max(1.75rem,env(safe-area-inset-top))] sm:right-[max(2rem,env(safe-area-inset-right))]"
             aria-label={t("close")}
           >
             <X />
           </button>
 
-          <div className="relative flex min-h-[72vh] flex-col justify-end px-5 pb-10 sm:min-h-[78vh] sm:px-10 sm:pb-14 lg:px-16">
+          <div className="safe-detail-x relative flex min-h-[72vh] flex-col justify-end pb-[max(2.5rem,env(safe-area-inset-bottom))] supports-[height:100svh]:min-h-[72svh] sm:min-h-[78vh] sm:pb-[max(3.5rem,env(safe-area-inset-bottom))] supports-[height:100svh]:sm:min-h-[78svh]">
             <div className="detail-hero-copy max-w-3xl">
               <span className="text-[11px] font-semibold tracking-[0.22em] text-zinc-300 uppercase">
                 {view.mediaType === "movie"
@@ -795,7 +795,7 @@ export function DetailModal({
           </div>
         </div>
 
-        <div className="relative z-10 space-y-12 px-5 pb-20 sm:px-10 lg:px-16">
+        <div className="safe-detail-x relative z-10 space-y-12 pb-[calc(5rem+env(safe-area-inset-bottom))]">
           <section className="detail-stagger max-w-3xl">
             <h3 className="text-xs font-bold tracking-[0.28em] text-zinc-500 uppercase">
               {t("synopsis")}

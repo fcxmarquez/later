@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import {
   getMessages,
@@ -8,6 +8,13 @@ import {
 import { resolveLocale } from "@/i18n/locale";
 import { routing } from "@/i18n/routing";
 import "../globals.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#050507",
+};
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -42,7 +49,7 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} className="dark" suppressHydrationWarning>
-      <body className="bg-background text-foreground min-h-screen antialiased">
+      <body className="bg-background text-foreground min-h-screen antialiased supports-[height:100dvh]:min-h-dvh">
         <NextIntlClientProvider messages={messages}>
           {children}
         </NextIntlClientProvider>

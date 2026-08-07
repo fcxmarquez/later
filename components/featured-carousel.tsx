@@ -101,7 +101,7 @@ export function FeaturedCarousel({ items, onOpen }: FeaturedCarouselProps) {
                 })}
                 aria-hidden={!isActive}
                 inert={!isActive}
-                className="relative flex min-h-[78vh] min-w-0 shrink-0 grow-0 basis-full items-end px-5 pb-20 sm:px-10 lg:min-h-[88vh] lg:px-14 lg:pb-28"
+                className="safe-page-x relative flex min-h-[78vh] min-w-0 shrink-0 grow-0 basis-full items-end pb-20 supports-[height:100svh]:min-h-[78svh] lg:min-h-[88vh] lg:pb-28 supports-[height:100svh]:lg:min-h-[88svh]"
               >
                 <Image
                   src={imageUrl(item.backdropPath, "backdrop")}
@@ -123,11 +123,11 @@ export function FeaturedCarousel({ items, onOpen }: FeaturedCarouselProps) {
                   <p className="mt-5 line-clamp-3 max-w-xl text-base leading-7 text-zinc-200 sm:text-lg">
                     {item.overview}
                   </p>
-                  <div className="mt-7 flex gap-3">
+                  <div className="mt-7 flex gap-3 max-[359px]:gap-2">
                     <button
                       type="button"
                       onClick={() => onOpen(item)}
-                      className="flex items-center gap-2 rounded-full bg-white px-6 py-3.5 font-semibold text-black transition hover:scale-105"
+                      className="flex items-center gap-2 rounded-full bg-white px-6 py-3.5 font-semibold whitespace-nowrap text-black transition hover:scale-105 max-[359px]:px-3 max-[359px]:text-sm"
                     >
                       <Play size={18} fill="currentColor" />{" "}
                       {tHome("seeDetails")}
@@ -136,7 +136,7 @@ export function FeaturedCarousel({ items, onOpen }: FeaturedCarouselProps) {
                       type="button"
                       disabled={saved}
                       onClick={() => add(item)}
-                      className="glass flex items-center gap-2 rounded-full px-6 py-3.5 font-semibold disabled:opacity-70"
+                      className="glass flex items-center gap-2 rounded-full px-6 py-3.5 font-semibold whitespace-nowrap disabled:opacity-70 max-[359px]:px-3 max-[359px]:text-sm"
                     >
                       {saved ? <Check size={19} /> : <Bookmark size={19} />}{" "}
                       {saved ? tHome("inYourList") : tHome("myList")}
@@ -151,7 +151,7 @@ export function FeaturedCarousel({ items, onOpen }: FeaturedCarouselProps) {
 
       {canAutoplay ? (
         <div
-          className="absolute inset-x-0 bottom-6 z-10 flex justify-center gap-2 px-5 sm:bottom-8 sm:px-10 lg:bottom-10 lg:justify-start lg:px-14"
+          className="safe-page-x absolute inset-x-0 bottom-2 z-10 flex justify-center gap-0 sm:bottom-4 sm:gap-1 lg:bottom-6 lg:justify-start"
           role="tablist"
           aria-label={tHome("carouselDotsLabel")}
         >
@@ -165,13 +165,17 @@ export function FeaturedCarousel({ items, onOpen }: FeaturedCarouselProps) {
                 aria-selected={isActive}
                 aria-label={tHome("carouselDot", { title: item.title })}
                 onClick={() => scrollTo(index)}
-                className={cn(
-                  "h-2 rounded-full transition-[width,background-color,opacity] duration-300",
-                  isActive
-                    ? "w-7 bg-white"
-                    : "w-2 bg-white/45 hover:bg-white/70",
-                )}
-              />
+                className="group grid size-11 place-items-center rounded-full"
+              >
+                <span
+                  className={cn(
+                    "h-2 rounded-full transition-[width,background-color,opacity] duration-300",
+                    isActive
+                      ? "w-7 bg-white"
+                      : "w-2 bg-white/45 group-hover:bg-white/70",
+                  )}
+                />
+              </button>
             );
           })}
         </div>
