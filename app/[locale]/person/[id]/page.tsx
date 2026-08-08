@@ -4,41 +4,14 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { PersonPage } from "@/components/person-page";
 import { Link } from "@/i18n/navigation";
 import { resolveLocale } from "@/i18n/locale";
-import { isAuthConfigured } from "@/lib/auth/config";
-import { getAuth } from "@/lib/auth/server";
 import { getPersonDetail } from "@/lib/tmdb-person";
-import type { SavedMedia } from "@/lib/types";
-import { getWatchlist } from "@/lib/watchlist";
-import type { WatchlistMode } from "@/store/watchlist";
+import { getWatchlistContext } from "@/lib/watchlist-context";
 
 export const dynamic = "force-dynamic";
 
 type PersonRouteProps = {
   params: Promise<{ locale: string; id: string }>;
 };
-
-type WatchlistContext = {
-  mode: WatchlistMode;
-  user: { name: string } | null;
-  initialWatchlist: SavedMedia[];
-};
-
-async function getWatchlistContext(): Promise<WatchlistContext> {
-  if (!isAuthConfigured()) {
-    return { mode: "guest", user: null, initialWatchlist: [] };
-  }
-
-  const { data: session } = await getAuth().getSession();
-  if (!session?.user) {
-    return { mode: "guest", user: null, initialWatchlist: [] };
-  }
-
-  return {
-    mode: "authenticated",
-    user: { name: session.user.name },
-    initialWatchlist: await getWatchlist(session.user.id),
-  };
-}
 
 function parsePersonId(value: string) {
   const id = Number(value);

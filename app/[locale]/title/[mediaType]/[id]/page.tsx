@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { TitleUnavailable } from "@/app/[locale]/_components/title-unavailable";
 import { RoutedDetailPage } from "@/components/title-detail-route";
 import { resolveLocale } from "@/i18n/locale";
-import { getTitleDetail, resolveProviderRegion } from "@/lib/tmdb-detail";
+import { getTitleDetail } from "@/lib/tmdb-detail";
+import { resolveProviderRegion } from "@/lib/tmdb-region";
 import type { MediaType } from "@/lib/types";
 import { getWatchlistContext } from "@/lib/watchlist-context";
 
@@ -46,6 +48,12 @@ export async function generateMetadata({
     await getRequestRegion(),
   );
   if (result.status !== "success") {
+    if (result.status === "unavailable") {
+      return {
+        title: t("metadataFallback"),
+        robots: { index: false, follow: false },
+      };
+    }
     return { title: t("metadataFallback") };
   }
 
@@ -76,7 +84,8 @@ export default async function TitleRoute({ params }: TitleRouteProps) {
     getTitleDetail(id, mediaType, locale, await getRequestRegion()),
     getWatchlistContext(),
   ]);
-  if (result.status !== "success") notFound();
+  if (result.status === "not-found") notFound();
+  if (result.status === "unavailable") return <TitleUnavailable />;
 
   return (
     <RoutedDetailPage

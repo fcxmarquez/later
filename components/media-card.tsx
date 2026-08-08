@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { imageUrl } from "@/lib/catalog";
 import type { MediaItem } from "@/lib/types";
-import { useWatchlist } from "@/store/watchlist";
+import { useWatchlistItem } from "@/store/watchlist";
 
 const GRID_IMAGE_SIZES = [
   "(min-width: 1536px) calc((100vw - 208px) / 7)",
@@ -30,16 +30,12 @@ export function MediaCard({
 }) {
   const t = useTranslations("MediaCard");
   const tCommon = useTranslations("Common");
-  const saved = useWatchlist((state) =>
-    state.items.find(
-      (entry) => entry.id === item.id && entry.mediaType === item.mediaType,
-    ),
-  );
-  const add = useWatchlist((state) => state.add);
-  const remove = useWatchlist((state) => state.remove);
+  const { saved, isPending, add, remove } = useWatchlistItem(item);
   const [justAdded, setJustAdded] = useState(false);
 
   const toggleSaved = () => {
+    if (isPending) return;
+
     if (saved) {
       setJustAdded(false);
       void remove(item);
@@ -47,7 +43,9 @@ export function MediaCard({
     }
 
     setJustAdded(true);
-    void add(item);
+    void add(item).then((added) => {
+      if (!added) setJustAdded(false);
+    });
   };
   return (
     <article
@@ -71,7 +69,9 @@ export function MediaCard({
         <button
           type="button"
           onClick={toggleSaved}
-          className={`absolute right-3 bottom-3 z-20 grid size-11 cursor-pointer place-items-center rounded-full bg-white text-black opacity-100 shadow-lg transition hover:scale-110 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 ${saved && justAdded ? "watchlist-added" : ""}`}
+          disabled={isPending}
+          aria-busy={isPending}
+          className={`absolute right-3 bottom-3 z-20 grid size-11 cursor-pointer place-items-center rounded-full bg-white text-black opacity-100 shadow-lg transition hover:scale-110 disabled:cursor-wait disabled:opacity-70 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 ${saved && justAdded ? "watchlist-added" : ""}`}
           aria-label={saved ? t("removeFromList") : t("addToList")}
           aria-pressed={Boolean(saved)}
         >

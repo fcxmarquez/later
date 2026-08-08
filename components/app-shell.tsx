@@ -3,21 +3,13 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Compass, Eye, Film, Play, Search, X } from "lucide-react";
 import { getAuthClient } from "@/lib/auth/client";
-import {
-  clearGuestWatchlist,
-  GUEST_WATCHLIST_KEY,
-  isSavedMedia,
-} from "@/lib/guest-storage";
-import { HOME_SECTION_IDS, type HomeSection } from "@/lib/tmdb";
-import type { MediaItem, SavedMedia } from "@/lib/types";
-import { type WatchlistMode, useWatchlist } from "@/store/watchlist";
+import { clearGuestWatchlist, loadGuestWatchlist } from "@/lib/guest-storage";
+import type { HomeSection } from "@/lib/tmdb";
+import type { MediaItem, SavedMedia, WatchlistMode } from "@/lib/types";
+import { useWatchlist } from "@/store/watchlist";
 import { FeaturedCarousel } from "./featured-carousel";
 import { MediaCard } from "./media-card";
-import {
-  FeaturedHeroSkeleton,
-  MediaRowSkeleton,
-  SearchGridSkeleton,
-} from "./media-skeletons";
+import { SearchGridSkeleton } from "./media-skeletons";
 import { ProfileMenu } from "./profile-menu";
 import { WatchlistErrorToast } from "./watchlist-error-toast";
 
@@ -29,18 +21,23 @@ type AppShellProps = {
   mode: WatchlistMode;
   user: { name: string } | null;
   initialWatchlist: SavedMedia[];
+  initialHomeSections: HomeSection[];
+  initialHomeError: boolean;
 };
 
-export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
+export function AppShell({
+  mode,
+  user,
+  initialWatchlist,
+  initialHomeSections,
+  initialHomeError,
+}: AppShellProps) {
   const tNav = useTranslations("Nav");
   const tHome = useTranslations("Home");
   const tSearch = useTranslations("Search");
   const tList = useTranslations("List");
   const locale = useLocale();
   const [view, setView] = useState<View>("home");
-  const [homeSections, setHomeSections] = useState<HomeSection[]>([]);
-  const [loadedHomeLocale, setLoadedHomeLocale] = useState<string | null>(null);
-  const [homeError, setHomeError] = useState(false);
   const [searchResults, setSearchResults] = useState<MediaItem[]>([]);
   const [resolvedSearchKey, setResolvedSearchKey] = useState<string | null>(
     null,
@@ -52,79 +49,48 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
   const legacyMigrationStarted = useRef(false);
   const isGuest = mode === "guest";
   const searchKey = `${locale}|${query}`;
-  const isHomeLoading = loadedHomeLocale !== locale;
   const isSearching = view === "search" && resolvedSearchKey !== searchKey;
   const items = useWatchlist((state) => state.items);
   const initialize = useWatchlist((state) => state.initialize);
   const featuredItems = useMemo(() => {
-    const trending = homeSections.find(
+    const trending = initialHomeSections.find(
       (section) => section.id === "trending",
     )?.results;
     const source =
       trending && trending.length > 0
         ? trending
-        : (homeSections[0]?.results ?? []);
+        : (initialHomeSections[0]?.results ?? []);
     return source.slice(0, FEATURED_SLIDE_COUNT);
-  }, [homeSections]);
+  }, [initialHomeSections]);
   useEffect(() => {
     initialize(initialWatchlist, mode);
     if (isGuest || legacyMigrationStarted.current) return;
     legacyMigrationStarted.current = true;
 
-    const raw = window.localStorage.getItem(GUEST_WATCHLIST_KEY);
-    if (!raw) return;
-
-    try {
-      const parsed = JSON.parse(raw) as { state?: { items?: unknown[] } };
-      const legacyItems = parsed.state?.items?.filter(isSavedMedia) ?? [];
-      const migrateItem = async (item: SavedMedia) => {
-        const added = await useWatchlist.getState().add(item);
-        if (!added || !item.watched) return added;
-
-        const current = useWatchlist
-          .getState()
-          .items.find(
-            (saved) =>
-              saved.id === item.id && saved.mediaType === item.mediaType,
-          );
-        return current?.watched
-          ? true
-          : useWatchlist.getState().toggleWatched(item);
-      };
-
-      void Promise.all(legacyItems.map(migrateItem)).then((results) => {
-        if (results.every(Boolean)) clearGuestWatchlist();
-      });
-    } catch {
+    const legacyItems = loadGuestWatchlist();
+    if (legacyItems.length === 0) {
       clearGuestWatchlist();
+      return;
     }
-  }, [initialWatchlist, initialize, isGuest, mode]);
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch(`/api/tmdb/home?locale=${encodeURIComponent(locale)}`, {
-      signal: controller.signal,
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error("catalog failed");
-        return res.json();
-      })
-      .then((data: { sections?: HomeSection[] }) => {
-        const sections = (data.sections ?? []).filter(
-          (section) =>
-            HOME_SECTION_IDS.includes(section.id) && section.results.length > 0,
+
+    const migrateItem = async (item: SavedMedia) => {
+      const added = await useWatchlist.getState().add(item);
+      if (!added || !item.watched) return added;
+
+      const current = useWatchlist
+        .getState()
+        .items.find(
+          (saved) => saved.id === item.id && saved.mediaType === item.mediaType,
         );
-        setHomeSections(sections);
-        setHomeError(false);
-        setLoadedHomeLocale(locale);
-      })
-      .catch((fetchError) => {
-        if (fetchError.name === "AbortError") return;
-        setHomeError(true);
-        setHomeSections([]);
-        setLoadedHomeLocale(locale);
-      });
-    return () => controller.abort();
-  }, [locale]);
+      return current?.watched
+        ? true
+        : useWatchlist.getState().toggleWatched(item);
+    };
+
+    void Promise.all(legacyItems.map(migrateItem)).then((results) => {
+      if (results.every(Boolean)) clearGuestWatchlist();
+    });
+  }, [initialWatchlist, initialize, isGuest, mode]);
   useEffect(() => {
     if (view !== "search") return;
     const controller = new AbortController();
@@ -181,6 +147,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
     <main className="min-h-screen pb-[calc(7rem+env(safe-area-inset-bottom))] supports-[height:100dvh]:min-h-dvh">
       <header className="safe-page-x fixed inset-x-0 top-0 z-40 flex h-[calc(5rem+env(safe-area-inset-top))] items-center justify-between bg-gradient-to-b from-black/85 to-transparent pt-[env(safe-area-inset-top)]">
         <button
+          type="button"
           onClick={() => nav("home")}
           className="flex min-h-11 items-center gap-2 text-xl font-bold tracking-tight"
         >
@@ -199,7 +166,9 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
           ).map(([key, label]) => (
             <button
               key={key}
+              type="button"
               onClick={() => nav(key)}
+              aria-current={view === key ? "page" : undefined}
               className={`min-h-11 rounded-full px-5 py-2 text-sm transition ${view === key ? "bg-white text-black" : "text-zinc-300 hover:text-white"}`}
             >
               {label}
@@ -218,18 +187,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
 
       {view === "home" && (
         <>
-          {isHomeLoading ? (
-            <>
-              <FeaturedHeroSkeleton />
-              {HOME_SECTION_IDS.map((sectionId) => (
-                <MediaRowSkeleton
-                  key={sectionId}
-                  title={tHome(`sections.${sectionId}.title`)}
-                  subtitle={tHome(`sections.${sectionId}.subtitle`)}
-                />
-              ))}
-            </>
-          ) : homeError ? (
+          {initialHomeError ? (
             <section className="safe-page-x flex min-h-[70vh] flex-col items-center justify-center text-center supports-[height:100svh]:min-h-[70svh]">
               <Film size={34} className="text-zinc-600" />
               <h2 className="mt-4 text-xl font-semibold">
@@ -252,7 +210,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
           ) : (
             <>
               <FeaturedCarousel items={featuredItems} />
-              {homeSections.map((section) => (
+              {initialHomeSections.map((section) => (
                 <MediaRow
                   key={section.id}
                   title={tHome(`sections.${section.id}.title`)}
@@ -357,7 +315,9 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
               ).map(([key, label]) => (
                 <button
                   key={key}
+                  type="button"
                   onClick={() => setFilter(key)}
+                  aria-pressed={filter === key}
                   className={`min-h-11 rounded-full px-4 py-2 text-sm ${filter === key ? "bg-white text-black" : "text-zinc-400"}`}
                 >
                   {label}
@@ -387,6 +347,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
                 {tList("emptyBody")}
               </p>
               <button
+                type="button"
                 onClick={() => nav("search")}
                 className="mt-6 rounded-full bg-white px-6 py-3 font-semibold text-black"
               >
@@ -405,6 +366,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
                 {tList("noPendingBody")}
               </p>
               <button
+                type="button"
                 onClick={() => setFilter("watched")}
                 className="mt-6 rounded-full bg-white px-6 py-3 font-semibold text-black"
               >
@@ -423,6 +385,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
                 {tList("noWatchedBody")}
               </p>
               <button
+                type="button"
                 onClick={() => setFilter("pending")}
                 className="mt-6 rounded-full bg-white px-6 py-3 font-semibold text-black"
               >
@@ -443,7 +406,9 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
         ).map(([key, Icon, label]) => (
           <button
             key={key}
+            type="button"
             onClick={() => nav(key)}
+            aria-current={view === key ? "page" : undefined}
             className={`grid size-12 place-items-center rounded-full ${view === key ? "bg-white text-black" : "text-zinc-400"}`}
             aria-label={label}
           >

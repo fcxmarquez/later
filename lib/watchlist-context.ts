@@ -2,9 +2,8 @@ import "server-only";
 
 import { isAuthConfigured } from "@/lib/auth/config";
 import { getAuth } from "@/lib/auth/server";
-import type { SavedMedia } from "@/lib/types";
+import type { SavedMedia, WatchlistMode } from "@/lib/types";
 import { getWatchlist } from "@/lib/watchlist";
-import type { WatchlistMode } from "@/store/watchlist";
 
 export type WatchlistContext = {
   mode: WatchlistMode;

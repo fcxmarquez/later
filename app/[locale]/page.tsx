@@ -1,9 +1,17 @@
+import { headers } from "next/headers";
+import { Suspense } from "react";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AppShell } from "@/components/app-shell";
-import { isAuthConfigured } from "@/lib/auth/config";
-import { getAuth } from "@/lib/auth/server";
-import { getWatchlist } from "@/lib/watchlist";
+import {
+  FeaturedHeroSkeleton,
+  MediaRowSkeleton,
+} from "@/components/media-skeletons";
 import { resolveLocale } from "@/i18n/locale";
-import { setRequestLocale } from "next-intl/server";
+import type { AppLocale } from "@/i18n/routing";
+import { HOME_SECTION_IDS } from "@/lib/tmdb";
+import { resolveProviderRegion } from "@/lib/tmdb-region";
+import { getHomeCatalog } from "@/lib/tmdb-server";
+import { getWatchlistContext } from "@/lib/watchlist-context";
 
 export const dynamic = "force-dynamic";
 
@@ -15,26 +23,47 @@ export default async function Home({
   const { locale: localeParam } = await params;
   const locale = resolveLocale(localeParam);
   setRequestLocale(locale);
+  const t = await getTranslations("Home");
 
-  if (!isAuthConfigured()) {
-    return <AppShell mode="guest" initialWatchlist={[]} user={null} />;
-  }
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen pb-[calc(7rem+env(safe-area-inset-bottom))] supports-[height:100dvh]:min-h-dvh">
+          <FeaturedHeroSkeleton />
+          {HOME_SECTION_IDS.map((sectionId) => (
+            <MediaRowSkeleton
+              key={sectionId}
+              title={t(`sections.${sectionId}.title`)}
+              subtitle={t(`sections.${sectionId}.subtitle`)}
+            />
+          ))}
+        </main>
+      }
+    >
+      <HomeContent locale={locale} />
+    </Suspense>
+  );
+}
 
-  const { data: session } = await getAuth().getSession();
+async function HomeContent({ locale }: { locale: AppLocale }) {
+  const requestHeaders = await headers();
+  const region = resolveProviderRegion(
+    null,
+    requestHeaders.get("x-vercel-ip-country"),
+  );
+  const [catalog, watchlist] = await Promise.all([
+    getHomeCatalog(locale, region),
+    getWatchlistContext(),
+  ]);
 
-  if (session?.user) {
-    const initialWatchlist = await getWatchlist(session.user.id);
-
-    return (
-      <AppShell
-        mode="authenticated"
-        initialWatchlist={initialWatchlist}
-        user={{
-          name: session.user.name,
-        }}
-      />
-    );
-  }
-
-  return <AppShell mode="guest" initialWatchlist={[]} user={null} />;
+  return (
+    <AppShell
+      key={locale}
+      mode={watchlist.mode}
+      user={watchlist.user}
+      initialWatchlist={watchlist.initialWatchlist}
+      initialHomeSections={catalog.sections}
+      initialHomeError={catalog.error}
+    />
+  );
 }

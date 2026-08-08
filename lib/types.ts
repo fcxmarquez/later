@@ -1,5 +1,7 @@
 export type MediaType = "movie" | "tv";
 
+export type WatchlistMode = "guest" | "authenticated";
+
 export type MediaItem = {
   id: number;
   title: string;
