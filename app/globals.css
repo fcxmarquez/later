@@ -96,6 +96,22 @@ input {
 .poster-shadow {
   box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55);
 }
+.watchlist-added {
+  animation: watchlist-added 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes watchlist-added {
+  0% {
+    transform: scale(0.88);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.5);
+  }
+  45% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
 
 /* Immersive title detail overlay (Apple TV–inspired) */
 .detail-overlay {
@@ -260,6 +276,9 @@ input {
     transition: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+  .watchlist-added {
+    animation: none !important;
   }
 }
 
