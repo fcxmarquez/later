@@ -1,6 +1,6 @@
 "use client";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Compass, Eye, Film, Play, Search, X } from "lucide-react";
 import { getAuthClient } from "@/lib/auth/client";
 import {
@@ -11,7 +11,6 @@ import {
 import { HOME_SECTION_IDS, type HomeSection } from "@/lib/tmdb";
 import type { MediaItem, SavedMedia } from "@/lib/types";
 import { type WatchlistMode, useWatchlist } from "@/store/watchlist";
-import { DetailModal } from "./detail-modal";
 import { FeaturedCarousel } from "./featured-carousel";
 import { MediaCard } from "./media-card";
 import {
@@ -20,6 +19,7 @@ import {
   SearchGridSkeleton,
 } from "./media-skeletons";
 import { ProfileMenu } from "./profile-menu";
+import { WatchlistErrorToast } from "./watchlist-error-toast";
 
 const FEATURED_SLIDE_COUNT = 6;
 
@@ -36,7 +36,6 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
   const tHome = useTranslations("Home");
   const tSearch = useTranslations("Search");
   const tList = useTranslations("List");
-  const tErrors = useTranslations("WatchlistErrors");
   const locale = useLocale();
   const [view, setView] = useState<View>("home");
   const [homeSections, setHomeSections] = useState<HomeSection[]>([]);
@@ -47,7 +46,6 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
     null,
   );
   const [searchError, setSearchError] = useState(false);
-  const [selected, setSelected] = useState<MediaItem | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "pending" | "watched">("all");
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -58,8 +56,6 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
   const isSearching = view === "search" && resolvedSearchKey !== searchKey;
   const items = useWatchlist((state) => state.items);
   const initialize = useWatchlist((state) => state.initialize);
-  const error = useWatchlist((state) => state.error);
-  const clearError = useWatchlist((state) => state.clearError);
   const featuredItems = useMemo(() => {
     const trending = homeSections.find(
       (section) => section.id === "trending",
@@ -173,7 +169,6 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
     setView(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  const closeModal = useCallback(() => setSelected(null), []);
   const signOut = async () => {
     setIsSigningOut(true);
     try {
@@ -256,14 +251,13 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
             </section>
           ) : (
             <>
-              <FeaturedCarousel items={featuredItems} onOpen={setSelected} />
+              <FeaturedCarousel items={featuredItems} />
               {homeSections.map((section) => (
                 <MediaRow
                   key={section.id}
                   title={tHome(`sections.${section.id}.title`)}
                   subtitle={tHome(`sections.${section.id}.subtitle`)}
                   items={section.results}
-                  open={setSelected}
                 />
               ))}
             </>
@@ -320,7 +314,6 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
                     key={`${item.mediaType}-${item.id}`}
                     item={item}
                     layout="grid"
-                    onOpen={setSelected}
                   />
                 ))}
               </div>
@@ -379,7 +372,6 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
                   key={`${item.mediaType}-${item.id}`}
                   item={item}
                   layout="grid"
-                  onOpen={setSelected}
                 />
               ))}
             </div>
@@ -459,23 +451,7 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
           </button>
         ))}
       </nav>
-      {error && (
-        <div
-          role="alert"
-          className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex w-[calc(100%-max(1rem,env(safe-area-inset-left))-max(1rem,env(safe-area-inset-right)))] max-w-md -translate-x-1/2 items-center justify-between gap-4 rounded-2xl border border-red-400/20 bg-red-950/95 px-4 py-3 text-sm text-red-100 shadow-2xl backdrop-blur sm:bottom-6"
-        >
-          <span>{tErrors(error)}</span>
-          <button
-            type="button"
-            onClick={clearError}
-            className="grid size-11 shrink-0 place-items-center rounded-full hover:bg-white/10"
-            aria-label={tErrors("dismiss")}
-          >
-            <X size={17} />
-          </button>
-        </div>
-      )}
-      {selected && <DetailModal item={selected} close={closeModal} />}
+      <WatchlistErrorToast />
     </main>
   );
 }
@@ -483,12 +459,10 @@ function MediaRow({
   title,
   subtitle,
   items,
-  open,
 }: {
   title: string;
   subtitle: string;
   items: MediaItem[];
-  open: (item: MediaItem) => void;
 }) {
   return (
     <section className="safe-page-left mb-16">
@@ -499,7 +473,6 @@ function MediaRow({
           <MediaCard
             key={`${title}-${item.mediaType}-${item.id}`}
             item={item}
-            onOpen={open}
           />
         ))}
       </div>

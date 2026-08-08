@@ -6,7 +6,13 @@ import { isAppLocale, routing } from "@/i18n/routing";
 
 const handleI18nRouting = createMiddleware(routing);
 
-const GUEST_ALLOWED_PATHS = new Set(["/"]);
+function isGuestAllowedPath(pathname: string) {
+  return (
+    pathname === "/" ||
+    /^\/person\/\d+$/.test(pathname) ||
+    /^\/title\/(movie|tv)\/\d+$/.test(pathname)
+  );
+}
 
 function pathnameHasLocale(pathname: string) {
   return routing.locales.some(
@@ -45,7 +51,7 @@ export default async function proxy(request: NextRequest) {
   })(request);
 
   if (
-    GUEST_ALLOWED_PATHS.has(pathWithoutLocale) &&
+    isGuestAllowedPath(pathWithoutLocale) &&
     response.status >= 300 &&
     response.status < 400
   ) {

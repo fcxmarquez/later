@@ -2,8 +2,16 @@
 
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useId, useRef, useState, type SyntheticEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type SyntheticEvent,
+} from "react";
 import { Check, ChevronDown, Eye, Play, Plus, X } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { imageUrl, youtubeEmbedUrl, youtubeThumbUrl } from "@/lib/catalog";
 import type {
   CastMember,
@@ -16,8 +24,7 @@ import type {
   WatchProvider,
 } from "@/lib/types";
 import { useWatchlist } from "@/store/watchlist";
-
-const OVERVIEW_COLLAPSED_LINES = 3;
+import { ExpandableText } from "./expandable-text";
 
 function formatRuntime(minutes?: number | null) {
   if (!minutes) return null;
@@ -116,29 +123,36 @@ function ProviderBadge({ provider }: { provider: WatchProvider }) {
 }
 
 function CastCard({ member }: { member: CastMember }) {
+  const t = useTranslations("Detail");
   const [failed, setFailed] = useState(!member.profilePath);
   return (
     <li className="detail-stagger w-[104px] shrink-0 sm:w-[116px]">
-      <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-zinc-800 ring-1 ring-white/10">
-        {failed || !member.profilePath ? (
-          <span className="grid size-full place-items-center bg-gradient-to-br from-zinc-700 to-zinc-900 text-lg font-semibold tracking-wide text-zinc-200">
-            {initials(member.name)}
-          </span>
-        ) : (
-          <Image
-            src={imageUrl(member.profilePath, "profile")}
-            alt={member.name}
-            fill
-            sizes="116px"
-            className="object-cover"
-            onError={() => setFailed(true)}
-          />
-        )}
-      </div>
-      <p className="mt-2 truncate text-sm font-medium text-zinc-100">
-        {member.name}
-      </p>
-      <p className="truncate text-xs text-zinc-500">{member.character}</p>
+      <Link
+        href={`/person/${member.id}`}
+        aria-label={t("personDetails", { name: member.name })}
+        className="group block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#07070a]"
+      >
+        <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-zinc-800 ring-1 ring-white/10 transition duration-300 group-hover:-translate-y-1 group-hover:ring-white/30">
+          {failed || !member.profilePath ? (
+            <span className="grid size-full place-items-center bg-gradient-to-br from-zinc-700 to-zinc-900 text-lg font-semibold tracking-wide text-zinc-200">
+              {initials(member.name)}
+            </span>
+          ) : (
+            <Image
+              src={imageUrl(member.profilePath, "profile")}
+              alt={member.name}
+              fill
+              sizes="116px"
+              className="object-cover transition duration-500 group-hover:scale-105"
+              onError={() => setFailed(true)}
+            />
+          )}
+        </div>
+        <p className="mt-2 truncate text-sm font-medium text-zinc-100">
+          {member.name}
+        </p>
+        <p className="truncate text-xs text-zinc-500">{member.character}</p>
+      </Link>
     </li>
   );
 }
@@ -437,127 +451,6 @@ function TrailerLightbox({
   );
 }
 
-function ExpandableOverview({ text, id }: { text: string; id: string }) {
-  const t = useTranslations("Detail");
-  const contentRef = useRef<HTMLParagraphElement>(null);
-  const collapsedHeightRef = useRef(96);
-  const [expanded, setExpanded] = useState(false);
-  const [canExpand, setCanExpand] = useState(false);
-  const [height, setHeight] = useState<number | "auto">("auto");
-
-  useEffect(() => {
-    const node = contentRef.current;
-    if (!node) return;
-
-    const measure = () => {
-      const style = getComputedStyle(node);
-      const lineHeight = Number.parseFloat(style.lineHeight);
-      const collapsedHeight = Number.isFinite(lineHeight)
-        ? lineHeight * OVERVIEW_COLLAPSED_LINES
-        : 96;
-      collapsedHeightRef.current = collapsedHeight;
-
-      const fullHeight = node.scrollHeight;
-      const needsCollapse = fullHeight > collapsedHeight + 2;
-      setCanExpand(needsCollapse);
-      if (!expanded) {
-        setHeight(needsCollapse ? collapsedHeight : "auto");
-      }
-    };
-
-    const frame = requestAnimationFrame(measure);
-    const observer = new ResizeObserver(() => {
-      requestAnimationFrame(measure);
-    });
-    observer.observe(node);
-    return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-    };
-  }, [text, expanded]);
-
-  const toggle = () => {
-    const node = contentRef.current;
-    if (!node || !canExpand) return;
-
-    if (expanded) {
-      const fullHeight = node.scrollHeight;
-      setHeight(fullHeight);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setHeight(collapsedHeightRef.current);
-          setExpanded(false);
-        });
-      });
-      return;
-    }
-
-    const fullHeight = node.scrollHeight;
-    setExpanded(true);
-    setHeight(fullHeight);
-  };
-
-  return (
-    <div className="mt-4 max-w-3xl">
-      <div
-        className={`detail-overview relative ${expanded ? "is-expanded" : "is-collapsed"} ${canExpand ? "cursor-pointer pb-8" : ""}`}
-        onClick={toggle}
-        onKeyDown={(event) => {
-          if (!canExpand) return;
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            toggle();
-          }
-        }}
-        role={canExpand ? "button" : undefined}
-        tabIndex={canExpand ? 0 : undefined}
-        aria-expanded={canExpand ? expanded : undefined}
-        aria-controls={canExpand ? id : undefined}
-        aria-label={
-          canExpand ? (expanded ? t("showLess") : t("showMore")) : undefined
-        }
-      >
-        <p
-          ref={contentRef}
-          id={id}
-          className="detail-overview-text text-base leading-8 text-zinc-300 sm:text-lg"
-          style={{
-            height: typeof height === "number" ? `${height}px` : height,
-          }}
-          onTransitionEnd={(event) => {
-            if (
-              event.propertyName !== "height" ||
-              event.target !== event.currentTarget
-            )
-              return;
-            if (expanded) setHeight("auto");
-          }}
-        >
-          {text}
-        </p>
-        {canExpand && (
-          <>
-            <span
-              className={`detail-overview-fade pointer-events-none absolute inset-x-0 bottom-0 h-20 transition-opacity duration-300 ${expanded ? "opacity-0" : "opacity-100"}`}
-              aria-hidden
-            />
-            <span
-              className="pointer-events-none absolute inset-x-0 bottom-1 flex justify-center"
-              aria-hidden
-            >
-              <ChevronDown
-                size={22}
-                strokeWidth={2}
-                className={`text-zinc-200 drop-shadow-[0_1px_8px_rgba(0,0,0,.65)] transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
-              />
-            </span>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function EpisodeCard({
   episode,
   locale,
@@ -809,10 +702,14 @@ function HeroBackdrop({ src }: { src: string }) {
 
 export function DetailModal({
   item,
+  initialDetail,
   close,
+  presentation = "modal",
 }: {
   item: MediaItem;
+  initialDetail?: MediaDetail;
   close: () => void;
+  presentation?: "modal" | "page";
 }) {
   const t = useTranslations("Detail");
   const tCommon = useTranslations("Common");
@@ -827,9 +724,12 @@ export function DetailModal({
   const descriptionId = useId();
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const phaseRef = useRef<"enter" | "shown" | "exit">("enter");
-  const [phase, setPhase] = useState<"enter" | "shown" | "exit">("enter");
-  const [detail, setDetail] = useState<MediaDetail | null>(null);
+  const initialPhase = presentation === "modal" ? "enter" : "shown";
+  const phaseRef = useRef<"enter" | "shown" | "exit">(initialPhase);
+  const [phase, setPhase] = useState<"enter" | "shown" | "exit">(initialPhase);
+  const [detail, setDetail] = useState<MediaDetail | null>(
+    initialDetail ?? null,
+  );
   const [loadError, setLoadError] = useState(false);
   const [trailerPlayer, setTrailerPlayer] = useState<TrailerPlayerState | null>(
     null,
@@ -848,21 +748,33 @@ export function DetailModal({
       ? t("createdBy", { names: view.creators.join(", ") })
       : null;
 
-  const requestClose = () => {
+  const requestClose = useCallback(() => {
+    if (presentation === "page") {
+      close();
+      return;
+    }
     if (phaseRef.current === "exit") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      close();
+      return;
+    }
     phaseRef.current = "exit";
     setPhase("exit");
-  };
+  }, [close, presentation]);
 
   useEffect(() => {
+    if (presentation !== "modal") return;
     const frame = requestAnimationFrame(() => {
       phaseRef.current = "shown";
       setPhase("shown");
     });
     return () => cancelAnimationFrame(frame);
-  }, []);
+  }, [presentation]);
 
   useEffect(() => {
+    if (initialDetail) {
+      return;
+    }
     const controller = new AbortController();
     const params = new URLSearchParams({
       id: String(item.id),
@@ -885,9 +797,10 @@ export function DetailModal({
         setLoadError(true);
       });
     return () => controller.abort();
-  }, [item.id, item.mediaType, locale]);
+  }, [initialDetail, item.id, item.mediaType, locale]);
 
   useEffect(() => {
+    if (presentation !== "modal") return;
     const previousFocus = document.activeElement as HTMLElement | null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -923,7 +836,7 @@ export function DetailModal({
       document.body.style.overflow = previousOverflow;
       previousFocus?.focus();
     };
-  }, []);
+  }, [presentation, requestClose]);
 
   const onPanelAnimationEnd = (event: SyntheticEvent<HTMLElement>) => {
     if (event.target !== event.currentTarget) return;
@@ -938,25 +851,42 @@ export function DetailModal({
       : null,
     view.rating > 0 ? `★ ${view.rating.toFixed(1)}` : null,
   ].filter(Boolean);
+  const Root = presentation === "modal" ? "div" : "main";
 
   return (
-    <div
-      className={`detail-overlay fixed inset-0 z-50 ${phase === "enter" ? "is-enter" : ""} ${phase === "shown" ? "is-shown" : ""} ${phase === "exit" ? "is-exit" : ""}`}
-      onClick={() => {
-        if (trailerPlayerRef.current) return;
-        requestClose();
-      }}
+    <Root
+      className={
+        presentation === "modal"
+          ? `detail-overlay fixed inset-0 z-50 ${phase === "enter" ? "is-enter" : ""} ${phase === "shown" ? "is-shown" : ""} ${phase === "exit" ? "is-exit" : ""}`
+          : "detail-page is-shown min-h-screen bg-[#07070a] supports-[height:100dvh]:min-h-dvh"
+      }
+      onClick={
+        presentation === "modal"
+          ? () => {
+              if (trailerPlayerRef.current) return;
+              requestClose();
+            }
+          : undefined
+      }
     >
-      <div className="detail-overlay-dim absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      {presentation === "modal" ? (
+        <div className="detail-overlay-dim absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      ) : null}
       <section
         ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
+        role={presentation === "modal" ? "dialog" : undefined}
+        aria-modal={presentation === "modal" ? "true" : undefined}
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        onClick={(event) => event.stopPropagation()}
-        onAnimationEnd={onPanelAnimationEnd}
-        className="detail-panel absolute inset-0 min-h-screen overflow-y-auto overscroll-contain bg-[#07070a] supports-[height:100dvh]:min-h-dvh"
+        onClick={
+          presentation === "modal"
+            ? (event) => event.stopPropagation()
+            : undefined
+        }
+        onAnimationEnd={
+          presentation === "modal" ? onPanelAnimationEnd : undefined
+        }
+        className={`detail-panel inset-0 min-h-screen bg-[#07070a] supports-[height:100dvh]:min-h-dvh ${presentation === "modal" ? "absolute overflow-y-auto overscroll-contain" : "relative"}`}
       >
         <div className="relative min-h-[72vh] bg-black supports-[height:100svh]:min-h-[72svh] sm:min-h-[78vh] supports-[height:100svh]:sm:min-h-[78svh]">
           {view.backdropPath ? (
@@ -987,12 +917,21 @@ export function DetailModal({
                   : tCommon("series")}
               </span>
 
-              <h2
-                id={titleId}
-                className="mt-4 text-4xl font-bold tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl"
-              >
-                {view.title}
-              </h2>
+              {presentation === "modal" ? (
+                <h2
+                  id={titleId}
+                  className="mt-4 text-4xl font-bold tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl"
+                >
+                  {view.title}
+                </h2>
+              ) : (
+                <h1
+                  id={titleId}
+                  className="mt-4 text-4xl font-bold tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl"
+                >
+                  {view.title}
+                </h1>
+              )}
 
               {view.tagline && (
                 <p className="mt-4 max-w-2xl text-base text-zinc-300 italic sm:text-lg">
@@ -1049,10 +988,12 @@ export function DetailModal({
             <h3 className="text-xs font-bold tracking-[0.28em] text-zinc-500 uppercase">
               {t("synopsis")}
             </h3>
-            <ExpandableOverview
+            <ExpandableText
               key={view.overview}
               text={view.overview}
               id={descriptionId}
+              showMoreLabel={t("showMore")}
+              showLessLabel={t("showLess")}
             />
             {creditLine && (
               <p className="mt-5 text-sm text-zinc-500">{creditLine}</p>
@@ -1151,6 +1092,6 @@ export function DetailModal({
           onClosed={() => setTrailerPlayer(null)}
         />
       )}
-    </div>
+    </Root>
   );
 }

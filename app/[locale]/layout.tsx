@@ -36,9 +36,11 @@ export async function generateMetadata({
 
 export default async function LocaleLayout({
   children,
+  modal,
   params,
 }: Readonly<{
   children: React.ReactNode;
+  modal?: React.ReactNode;
   params: Promise<{ locale: string }>;
 }>) {
   const { locale: localeParam } = await params;
@@ -48,10 +50,16 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className="dark" suppressHydrationWarning>
+    <html
+      lang={locale}
+      className="dark"
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
       <body className="bg-background text-foreground min-h-screen antialiased supports-[height:100dvh]:min-h-dvh">
         <NextIntlClientProvider messages={messages}>
           {children}
+          {modal}
         </NextIntlClientProvider>
       </body>
     </html>

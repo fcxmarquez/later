@@ -2,8 +2,9 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Check, Plus } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { imageUrl } from "@/lib/catalog";
-import { MediaItem } from "@/lib/types";
+import type { MediaItem } from "@/lib/types";
 import { useWatchlist } from "@/store/watchlist";
 
 const GRID_IMAGE_SIZES = [
@@ -19,12 +20,12 @@ const RAIL_IMAGE_SIZES =
 
 export function MediaCard({
   item,
-  onOpen,
   layout = "rail",
+  subtitle,
 }: {
   item: MediaItem;
-  onOpen: (item: MediaItem) => void;
   layout?: "grid" | "rail";
+  subtitle?: string;
 }) {
   const t = useTranslations("MediaCard");
   const tCommon = useTranslations("Common");
@@ -38,9 +39,9 @@ export function MediaCard({
     <article
       className={`group relative ${layout === "grid" ? "w-full min-w-0" : "w-[155px] shrink-0 sm:w-[190px] lg:w-[215px]"}`}
     >
-      <button
-        type="button"
-        onClick={() => onOpen(item)}
+      <Link
+        href={`/title/${item.mediaType}/${item.id}`}
+        prefetch={false}
         className="absolute inset-0 z-10 cursor-pointer rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#050507]"
         aria-label={t("openDetails", { title: item.title })}
       />
@@ -74,6 +75,9 @@ export function MediaCard({
       <p className="mt-1 text-xs text-zinc-500">
         {item.year} <span className="px-1">·</span> ★ {item.rating.toFixed(1)}
       </p>
+      {subtitle ? (
+        <p className="mt-1 truncate text-xs text-zinc-400">{subtitle}</p>
+      ) : null}
     </article>
   );
 }
