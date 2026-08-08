@@ -165,6 +165,58 @@ async function main() {
     assert.equal(savedWatchlist.length, 1);
     assert.equal(savedWatchlist[0]?.title, updatedItem.title);
 
+    const resetItem = await watchlist.setWatchlistItemWatched(
+      userId,
+      mediaItem.id,
+      mediaItem.mediaType,
+      false,
+    );
+    assert.equal(resetItem?.watched, false);
+
+    const guestAddedAt = Date.UTC(2025, 0, 2, 3, 4, 5);
+    const guestDuplicate = {
+      ...mediaItem,
+      title: "Guest metadata must not replace account metadata",
+      watched: true,
+      addedAt: savedItem.addedAt - 60_000,
+    };
+    const guestOnlyItem = {
+      ...mediaItem,
+      id: 2,
+      mediaType: "tv" as const,
+      title: "Guest-only migration item",
+      watched: false,
+      addedAt: guestAddedAt,
+    };
+
+    await watchlist.migrateWatchlistItems(userId, [
+      guestDuplicate,
+      guestOnlyItem,
+    ]);
+
+    const mergedWatchlist = await watchlist.getWatchlist(userId);
+    assert.equal(mergedWatchlist.length, 2);
+    const mergedDuplicate = mergedWatchlist.find(({ id }) => id === 1);
+    const mergedGuestOnlyItem = mergedWatchlist.find(({ id }) => id === 2);
+    assert.equal(mergedDuplicate?.title, updatedItem.title);
+    assert.equal(mergedDuplicate?.watched, true);
+    assert.equal(mergedDuplicate?.addedAt, savedItem.addedAt);
+    assert.equal(mergedGuestOnlyItem?.title, guestOnlyItem.title);
+    assert.equal(mergedGuestOnlyItem?.watched, false);
+    assert.equal(mergedGuestOnlyItem?.addedAt, guestAddedAt);
+
+    await watchlist.migrateWatchlistItems(userId, [
+      { ...guestDuplicate, watched: false },
+      guestOnlyItem,
+    ]);
+    const repeatedMigration = await watchlist.getWatchlist(userId);
+    assert.equal(repeatedMigration.length, 2);
+    assert.equal(
+      repeatedMigration.find(({ id }) => id === 1)?.watched,
+      true,
+      "A repeated migration downgraded watched state.",
+    );
+
     const missingItem = await watchlist.setWatchlistItemWatched(
       userId,
       999,
@@ -178,6 +230,14 @@ async function main() {
         userId,
         mediaItem.id,
         mediaItem.mediaType,
+      ),
+      true,
+    );
+    assert.equal(
+      await watchlist.deleteWatchlistItem(
+        userId,
+        guestOnlyItem.id,
+        guestOnlyItem.mediaType,
       ),
       true,
     );

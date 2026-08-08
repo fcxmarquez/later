@@ -6,16 +6,23 @@ import { loadGuestWatchlist, saveGuestWatchlist } from "@/lib/guest-storage";
 
 type MediaIdentity = Pick<MediaItem, "id" | "mediaType">;
 
-export type WatchlistErrorKey = "addFailed" | "removeFailed" | "toggleFailed";
+export type WatchlistErrorKey =
+  | "addFailed"
+  | "removeFailed"
+  | "toggleFailed"
+  | "migrationFailed"
+  | "migrationInvalid";
 
 type WatchlistStore = {
   items: SavedMedia[];
   mode: WatchlistMode | null;
   initialized: boolean;
+  isMigrating: boolean;
   pendingItems: Record<string, true>;
   error: WatchlistErrorKey | null;
   initialize: (items: SavedMedia[], mode: WatchlistMode) => void;
   clearError: () => void;
+  migrateGuestItems: (items: SavedMedia[]) => Promise<boolean>;
   add: (item: MediaItem) => Promise<boolean>;
   remove: (item: MediaIdentity) => Promise<boolean>;
   toggleWatched: (item: MediaIdentity) => Promise<boolean>;
@@ -57,10 +64,25 @@ async function requestWatchlist(
   return (await response.json()) as { item: SavedMedia };
 }
 
+async function requestWatchlistMigration(items: SavedMedia[]) {
+  const response = await fetch("/api/watchlist", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items }),
+  });
+
+  if (!response.ok) {
+    throw new Error("watchlist-migration-failed");
+  }
+
+  return (await response.json()) as { items: SavedMedia[] };
+}
+
 export const useWatchlist = create<WatchlistStore>((set, get) => ({
   items: [],
   mode: null,
   initialized: false,
+  isMigrating: false,
   pendingItems: {},
   error: null,
   initialize: (items, mode) => {
@@ -71,6 +93,7 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
         items: loadGuestWatchlist(),
         mode,
         initialized: true,
+        isMigrating: false,
         pendingItems: {},
         error: null,
       });
@@ -81,18 +104,43 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
       items,
       mode,
       initialized: true,
+      isMigrating: false,
       pendingItems: {},
       error: null,
     });
   },
   clearError: () => set({ error: null }),
+  migrateGuestItems: async (items) => {
+    const state = get();
+    if (
+      !state.initialized ||
+      state.mode !== "authenticated" ||
+      state.isMigrating ||
+      Object.keys(state.pendingItems).length > 0
+    ) {
+      return false;
+    }
+
+    set({ isMigrating: true, error: null });
+
+    try {
+      const result = await requestWatchlistMigration(items);
+      set({ items: result.items, error: null });
+      return true;
+    } catch {
+      set({ error: "migrationFailed" });
+      return false;
+    } finally {
+      set({ isMigrating: false });
+    }
+  },
   add: async (item) => {
     const state = get();
-    if (!state.initialized || !state.mode) return false;
-    if (state.items.some((saved) => isSameMedia(saved, item))) return true;
+    if (!state.initialized || !state.mode || state.isMigrating) return false;
 
     const key = mediaIdentityKey(item);
     if (state.pendingItems[key]) return false;
+    if (state.items.some((saved) => isSameMedia(saved, item))) return true;
 
     const optimisticItem: SavedMedia = {
       ...item,
@@ -138,7 +186,7 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
   },
   remove: async (item) => {
     const state = get();
-    if (!state.initialized || !state.mode) return false;
+    if (!state.initialized || !state.mode || state.isMigrating) return false;
 
     const removed = state.items.find((saved) => isSameMedia(saved, item));
     if (!removed) return true;
@@ -179,7 +227,7 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
   },
   toggleWatched: async (item) => {
     const state = get();
-    if (!state.initialized || !state.mode) return false;
+    if (!state.initialized || !state.mode || state.isMigrating) return false;
 
     const saved = state.items.find((entry) => isSameMedia(entry, item));
     if (!saved) return false;
@@ -239,7 +287,10 @@ export function useWatchlistItem(item: MediaIdentity) {
     state.items.find((entry) => isSameMedia(entry, item)),
   );
   const isPending = useWatchlist(
-    (state) => !state.initialized || Boolean(state.pendingItems[key]),
+    (state) =>
+      !state.initialized ||
+      state.isMigrating ||
+      Boolean(state.pendingItems[key]),
   );
   const add = useWatchlist((state) => state.add);
   const remove = useWatchlist((state) => state.remove);

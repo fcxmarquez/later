@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getDb } from "@/lib/db";
-import type { MediaItem, MediaType } from "@/lib/types";
+import type { MediaItem, MediaType, SavedMedia } from "@/lib/types";
 import { createWatchlistRepository } from "@/lib/watchlist-repository";
 
 function getWatchlistRepository() {
@@ -14,6 +14,15 @@ export async function getWatchlist(userId: string) {
 
 export async function saveWatchlistItem(userId: string, item: MediaItem) {
   return getWatchlistRepository().saveWatchlistItem(userId, item);
+}
+
+export async function migrateWatchlistItems(
+  userId: string,
+  items: SavedMedia[],
+) {
+  const repository = getWatchlistRepository();
+  await repository.migrateWatchlistItems(userId, items);
+  return repository.getWatchlist(userId);
 }
 
 export async function setWatchlistItemWatched(

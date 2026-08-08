@@ -12,7 +12,7 @@ pnpm run dev
 
 Set `DATABASE_URL` to Neon’s pooled connection, `DATABASE_URL_UNPOOLED` to the direct URL (without `-pooler`, used by migrations), `NEON_AUTH_BASE_URL` to the branch Auth URL, and generate `NEON_AUTH_COOKIE_SECRET` with `openssl rand -base64 32`. Add a TMDB read token as `TMDB_API_TOKEN` to load the live catalog; without it the catalog API returns empty and the UI shows skeletons then an error/empty state.
 
-You can use the app as a guest without signing in: in that mode the watchlist is stored in the browser’s LocalStorage. Any Google user can sign in for cloud sync with Neon Auth and Postgres. Users and sessions live in the managed `neon_auth` schema; each authenticated list and watched/pending state live in `public.watchlist_items`, isolated by user ID. The client keeps optimistic updates and, on sign-in, migrates LocalStorage data to that user's Postgres watchlist once.
+You can use the app as a guest without signing in: in that mode the watchlist is stored in the browser’s LocalStorage. Any Google user can sign in for cloud sync with Neon Auth and Postgres. Users and sessions live in the managed `neon_auth` schema; each authenticated list and watched/pending state live in `public.watchlist_items`, isolated by user ID. On sign-in, the client batch-merges the LocalStorage list into that user's Postgres watchlist. Existing account metadata is preserved, watched state only moves forward, guest save timestamps are retained for new rows, and the device backup is cleared only after the authenticated merge succeeds.
 
 The Postgres schema is defined with Drizzle in `db/schema.ts`. After changing the schema:
 
