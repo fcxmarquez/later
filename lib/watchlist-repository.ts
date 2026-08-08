@@ -1,6 +1,6 @@
 import { watchlistItems } from "@/db/schema";
 import type { MediaItem, MediaType, SavedMedia } from "@/lib/types";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 
 type WatchlistRow = typeof watchlistItems.$inferSelect;
@@ -35,7 +35,7 @@ export function createWatchlistRepository<
         .select()
         .from(watchlistItems)
         .where(eq(watchlistItems.userId, userId))
-        .orderBy(asc(watchlistItems.addedAt));
+        .orderBy(desc(watchlistItems.addedAt));
 
       return rows.map(toSavedMedia);
     },
