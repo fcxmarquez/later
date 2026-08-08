@@ -3,6 +3,7 @@ import { isAppLocale, routing, tmdbLanguage } from "@/i18n/routing";
 import type {
   CastMember,
   MediaDetail,
+  MediaSeason,
   MediaTrailer,
   MediaType,
   WatchProvider,
@@ -31,6 +32,14 @@ type TmdbCast = {
 };
 type TmdbCrew = { name: string; job?: string };
 type TmdbCreatedBy = { name: string };
+type TmdbSeason = {
+  id: number;
+  name?: string;
+  season_number: number;
+  episode_count?: number;
+  air_date?: string;
+  poster_path?: string | null;
+};
 type TmdbProvider = {
   provider_id: number;
   provider_name: string;
@@ -100,6 +109,7 @@ type TmdbDetailResponse = {
   "watch/providers"?: TmdbWatchProviders;
   videos?: { results?: TmdbVideo[] };
   release_dates?: TmdbReleaseDates;
+  seasons?: TmdbSeason[];
 };
 
 export const dynamic = "force-dynamic";
@@ -281,6 +291,28 @@ function mapDetail(
     detail.credits?.crew?.find((member) => member.job === "Director")?.name ||
     null;
   const creators = (detail.created_by || []).map((creator) => creator.name);
+  const seasonList: MediaSeason[] = (detail.seasons || [])
+    .filter(
+      (season) =>
+        Number.isInteger(season.season_number) && season.season_number >= 0,
+    )
+    .map((season) => ({
+      id: season.id,
+      name:
+        season.name?.trim() ||
+        (season.season_number === 0
+          ? locale === "es"
+            ? "Especiales"
+            : "Specials"
+          : locale === "es"
+            ? `Temporada ${season.season_number}`
+            : `Season ${season.season_number}`),
+      seasonNumber: season.season_number,
+      episodeCount: season.episode_count ?? 0,
+      airDate: season.air_date || "",
+      posterPath: season.poster_path || null,
+    }))
+    .sort((a, b) => a.seasonNumber - b.seasonNumber);
   const runtime =
     mediaType === "movie"
       ? (detail.runtime ?? null)
@@ -319,6 +351,7 @@ function mapDetail(
     director,
     creators,
     trailers: mapTrailers(detail),
+    seasonList: mediaType === "tv" ? seasonList : [],
   };
 }
 

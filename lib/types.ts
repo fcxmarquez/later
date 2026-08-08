@@ -37,6 +37,37 @@ export type MediaTrailer = {
   official: boolean;
 };
 
+export type MediaSeason = {
+  id: number;
+  name: string;
+  seasonNumber: number;
+  episodeCount: number;
+  airDate: string;
+  posterPath: string | null;
+};
+
+export type MediaEpisode = {
+  id: number;
+  name: string;
+  overview: string;
+  episodeNumber: number;
+  seasonNumber: number;
+  airDate: string;
+  runtime: number | null;
+  stillPath: string | null;
+  rating: number;
+};
+
+export type MediaSeasonDetail = {
+  id: number;
+  name: string;
+  overview: string;
+  seasonNumber: number;
+  airDate: string;
+  posterPath: string | null;
+  episodes: MediaEpisode[];
+};
+
 export type MediaDetail = MediaItem & {
   tagline?: string;
   runtime?: number | null;
@@ -50,6 +81,7 @@ export type MediaDetail = MediaItem & {
   director?: string | null;
   creators?: string[];
   trailers: MediaTrailer[];
+  seasonList: MediaSeason[];
 };
 
 export type SavedMedia = MediaItem & { watched: boolean; addedAt: number };

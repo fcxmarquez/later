@@ -1,6 +1,6 @@
 export const imageUrl = (
   path: string,
-  size: "poster" | "backdrop" | "profile" | "logo" = "poster",
+  size: "poster" | "backdrop" | "profile" | "logo" | "still" = "poster",
 ) => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
@@ -9,6 +9,7 @@ export const imageUrl = (
     backdrop: "original",
     profile: "w185",
     logo: "w154",
+    still: "w500",
   } as const;
   return `https://image.tmdb.org/t/p/${sizeMap[size]}${path}`;
 };
