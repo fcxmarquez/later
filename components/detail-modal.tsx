@@ -17,8 +17,8 @@ import type {
   WatchProvider,
 } from "@/lib/types";
 import { useWatchlist } from "@/store/watchlist";
-
-const OVERVIEW_COLLAPSED_LINES = 3;
+import { useDetailNavigation } from "@/store/detail-navigation";
+import { ExpandableText } from "./expandable-text";
 
 function formatRuntime(minutes?: number | null) {
   if (!minutes) return null;
@@ -116,13 +116,26 @@ function ProviderBadge({ provider }: { provider: WatchProvider }) {
   );
 }
 
-function CastCard({ member }: { member: CastMember }) {
+function CastCard({
+  member,
+  origin,
+  returnPath,
+}: {
+  member: CastMember;
+  origin: MediaItem;
+  returnPath: string;
+}) {
   const t = useTranslations("Detail");
   const [failed, setFailed] = useState(!member.profilePath);
   return (
     <li className="detail-stagger w-[104px] shrink-0 sm:w-[116px]">
       <Link
         href={`/person/${member.id}`}
+        onClick={() =>
+          useDetailNavigation
+            .getState()
+            .rememberPersonOrigin(origin, returnPath)
+        }
         aria-label={t("personDetails", { name: member.name })}
         className="group block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#07070a]"
       >
@@ -445,127 +458,6 @@ function TrailerLightbox({
   );
 }
 
-function ExpandableOverview({ text, id }: { text: string; id: string }) {
-  const t = useTranslations("Detail");
-  const contentRef = useRef<HTMLParagraphElement>(null);
-  const collapsedHeightRef = useRef(96);
-  const [expanded, setExpanded] = useState(false);
-  const [canExpand, setCanExpand] = useState(false);
-  const [height, setHeight] = useState<number | "auto">("auto");
-
-  useEffect(() => {
-    const node = contentRef.current;
-    if (!node) return;
-
-    const measure = () => {
-      const style = getComputedStyle(node);
-      const lineHeight = Number.parseFloat(style.lineHeight);
-      const collapsedHeight = Number.isFinite(lineHeight)
-        ? lineHeight * OVERVIEW_COLLAPSED_LINES
-        : 96;
-      collapsedHeightRef.current = collapsedHeight;
-
-      const fullHeight = node.scrollHeight;
-      const needsCollapse = fullHeight > collapsedHeight + 2;
-      setCanExpand(needsCollapse);
-      if (!expanded) {
-        setHeight(needsCollapse ? collapsedHeight : "auto");
-      }
-    };
-
-    const frame = requestAnimationFrame(measure);
-    const observer = new ResizeObserver(() => {
-      requestAnimationFrame(measure);
-    });
-    observer.observe(node);
-    return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-    };
-  }, [text, expanded]);
-
-  const toggle = () => {
-    const node = contentRef.current;
-    if (!node || !canExpand) return;
-
-    if (expanded) {
-      const fullHeight = node.scrollHeight;
-      setHeight(fullHeight);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setHeight(collapsedHeightRef.current);
-          setExpanded(false);
-        });
-      });
-      return;
-    }
-
-    const fullHeight = node.scrollHeight;
-    setExpanded(true);
-    setHeight(fullHeight);
-  };
-
-  return (
-    <div className="mt-4 max-w-3xl">
-      <div
-        className={`detail-overview relative ${expanded ? "is-expanded" : "is-collapsed"} ${canExpand ? "cursor-pointer pb-8" : ""}`}
-        onClick={toggle}
-        onKeyDown={(event) => {
-          if (!canExpand) return;
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            toggle();
-          }
-        }}
-        role={canExpand ? "button" : undefined}
-        tabIndex={canExpand ? 0 : undefined}
-        aria-expanded={canExpand ? expanded : undefined}
-        aria-controls={canExpand ? id : undefined}
-        aria-label={
-          canExpand ? (expanded ? t("showLess") : t("showMore")) : undefined
-        }
-      >
-        <p
-          ref={contentRef}
-          id={id}
-          className="detail-overview-text text-base leading-8 text-zinc-300 sm:text-lg"
-          style={{
-            height: typeof height === "number" ? `${height}px` : height,
-          }}
-          onTransitionEnd={(event) => {
-            if (
-              event.propertyName !== "height" ||
-              event.target !== event.currentTarget
-            )
-              return;
-            if (expanded) setHeight("auto");
-          }}
-        >
-          {text}
-        </p>
-        {canExpand && (
-          <>
-            <span
-              className={`detail-overview-fade pointer-events-none absolute inset-x-0 bottom-0 h-20 transition-opacity duration-300 ${expanded ? "opacity-0" : "opacity-100"}`}
-              aria-hidden
-            />
-            <span
-              className="pointer-events-none absolute inset-x-0 bottom-1 flex justify-center"
-              aria-hidden
-            >
-              <ChevronDown
-                size={22}
-                strokeWidth={2}
-                className={`text-zinc-200 drop-shadow-[0_1px_8px_rgba(0,0,0,.65)] transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
-              />
-            </span>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function EpisodeCard({
   episode,
   locale,
@@ -818,9 +710,11 @@ function HeroBackdrop({ src }: { src: string }) {
 export function DetailModal({
   item,
   close,
+  returnPath,
 }: {
   item: MediaItem;
   close: () => void;
+  returnPath: string;
 }) {
   const t = useTranslations("Detail");
   const tCommon = useTranslations("Common");
@@ -1057,10 +951,12 @@ export function DetailModal({
             <h3 className="text-xs font-bold tracking-[0.28em] text-zinc-500 uppercase">
               {t("synopsis")}
             </h3>
-            <ExpandableOverview
+            <ExpandableText
               key={view.overview}
               text={view.overview}
               id={descriptionId}
+              showMoreLabel={t("showMore")}
+              showLessLabel={t("showLess")}
             />
             {creditLine && (
               <p className="mt-5 text-sm text-zinc-500">{creditLine}</p>
@@ -1124,7 +1020,12 @@ export function DetailModal({
               </h3>
               <ul className="hide-scrollbar mt-5 flex gap-4 overflow-x-auto pb-4">
                 {view.cast.map((member) => (
-                  <CastCard key={member.id} member={member} />
+                  <CastCard
+                    key={member.id}
+                    member={member}
+                    origin={item}
+                    returnPath={returnPath}
+                  />
                 ))}
               </ul>
             </section>
