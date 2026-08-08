@@ -46,7 +46,9 @@ export function loadGuestWatchlist(): SavedMedia[] {
     ) {
       return [];
     }
-    return parsed.state?.items?.filter(isSavedMedia) ?? [];
+    return (parsed.state?.items?.filter(isSavedMedia) ?? []).sort(
+      (left, right) => right.addedAt - left.addedAt,
+    );
   } catch {
     return [];
   }

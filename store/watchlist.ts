@@ -100,7 +100,7 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
       addedAt: Date.now(),
     };
 
-    const nextItems = [...state.items, optimisticItem];
+    const nextItems = [optimisticItem, ...state.items];
     set((current) => ({
       items: nextItems,
       pendingItems: { ...current.pendingItems, [key]: true },
@@ -166,7 +166,7 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
     } catch {
       set((state) => ({
         items: [...state.items, removed].sort(
-          (left, right) => left.addedAt - right.addedAt,
+          (left, right) => right.addedAt - left.addedAt,
         ),
         error: "removeFailed",
       }));
