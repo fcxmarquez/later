@@ -136,6 +136,8 @@
     "enrichmentError": "No pudimos enriquecer la ficha. Mostramos la información básica.",
     "whereToWatch": "Dónde verlo",
     "whereToWatchHint": "Disponibilidad en {regionName} (streaming, alquiler o compra).",
+    "providerLinkLabel": "Ver opciones para {provider} (se abre en una pestaña nueva)",
+    "providerAttribution": "Datos de disponibilidad proporcionados por",
     "inCinemasHint": "Actualmente en cartelera en {regionName}.",
     "cast": "Reparto",
     "personDetails": "Ver detalles de {name}",

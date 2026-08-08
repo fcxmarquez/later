@@ -64,11 +64,18 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-function ProviderBadge({ provider }: { provider: WatchProvider }) {
+function ProviderBadge({
+  provider,
+  watchLink,
+}: {
+  provider: WatchProvider;
+  watchLink: string | null;
+}) {
+  const t = useTranslations("Detail");
   const [failed, setFailed] = useState(false);
-  return (
-    <li className="detail-stagger flex min-w-[4.75rem] flex-col items-center gap-2">
-      <div className="relative size-14 overflow-hidden rounded-2xl bg-white shadow-[0_10px_30px_rgba(0,0,0,.35)] ring-1 ring-white/15">
+  const badge = (
+    <>
+      <div className="relative size-14 overflow-hidden rounded-2xl bg-white shadow-[0_10px_30px_rgba(0,0,0,.35)] ring-1 ring-white/15 transition duration-300 group-hover:-translate-y-1 group-hover:ring-white/35">
         {failed ? (
           <span className="grid size-full place-items-center px-1 text-center text-[10px] font-bold text-zinc-800">
             {provider.name}
@@ -84,9 +91,28 @@ function ProviderBadge({ provider }: { provider: WatchProvider }) {
           />
         )}
       </div>
-      <span className="max-w-16 truncate text-center text-[11px] text-zinc-400">
+      <span className="max-w-16 truncate text-center text-[11px] text-zinc-400 transition group-hover:text-zinc-200">
         {provider.name}
       </span>
+    </>
+  );
+
+  return (
+    <li className="detail-stagger min-w-[4.75rem]">
+      {watchLink ? (
+        <a
+          href={watchLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t("providerLinkLabel", { provider: provider.name })}
+          title={t("providerLinkLabel", { provider: provider.name })}
+          className="group flex flex-col items-center gap-2 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#07070a]"
+        >
+          {badge}
+        </a>
+      ) : (
+        <div className="flex flex-col items-center gap-2">{badge}</div>
+      )}
     </li>
   );
 }
@@ -974,9 +1000,25 @@ export function DetailModal({
                 </p>
                 <ul className="mt-5 flex gap-4 overflow-x-auto pb-2">
                   {view.providers.map((provider) => (
-                    <ProviderBadge key={provider.id} provider={provider} />
+                    <ProviderBadge
+                      key={provider.id}
+                      provider={provider}
+                      watchLink={view.watchProvidersLink}
+                    />
                   ))}
                 </ul>
+                <p className="mt-3 text-xs text-zinc-600">
+                  {t("providerAttribution")}{" "}
+                  <a
+                    href="https://www.justwatch.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline decoration-zinc-700 underline-offset-2 transition hover:text-zinc-400 focus-visible:text-zinc-400 focus-visible:outline-none"
+                  >
+                    JustWatch
+                  </a>
+                  .
+                </p>
               </section>
             )
           )}

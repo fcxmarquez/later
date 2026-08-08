@@ -95,6 +95,7 @@ export type MediaDetail = MediaItem & {
   cast: CastMember[];
   providers: WatchProvider[];
   providersRegion?: WatchProviderRegion | null;
+  watchProvidersLink: string | null;
   /** True when the title is currently in theatrical release for the resolved region. */
   inCinemas?: boolean;
   director?: string | null;

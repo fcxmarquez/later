@@ -48,6 +48,7 @@ type TmdbProvider = {
   logo_path: string;
 };
 type TmdbProviderRegion = {
+  link?: string;
   flatrate?: TmdbProvider[];
   rent?: TmdbProvider[];
   buy?: TmdbProvider[];
@@ -110,6 +111,23 @@ function regionHasProviders(region: TmdbProviderRegion | undefined) {
   return [region.flatrate, region.ads, region.free, region.rent, region.buy]
     .filter(Boolean)
     .some((bucket) => (bucket?.length ?? 0) > 0);
+}
+
+function normalizeWatchProvidersLink(value: string | undefined) {
+  if (!value) return null;
+
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" ||
+      !["themoviedb.org", "www.themoviedb.org"].includes(url.hostname)
+    ) {
+      return null;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
 }
 
 function parseReleaseDay(value: string | undefined): Date | null {
@@ -177,6 +195,7 @@ function mapProviders(
         ? (us ?? {})
         : {};
   const providers: WatchProvider[] = [];
+  const watchProvidersLink = normalizeWatchProvidersLink(region.link);
   const seen = new Set<number>();
 
   for (const bucket of [
@@ -194,11 +213,13 @@ function mapProviders(
         name: provider.provider_name.trim(),
         logoPath: provider.logo_path,
       });
-      if (providers.length >= 8) return { providers, providersRegion };
+      if (providers.length >= 8) {
+        return { providers, providersRegion, watchProvidersLink };
+      }
     }
   }
 
-  return { providers, providersRegion };
+  return { providers, providersRegion, watchProvidersLink };
 }
 
 function mapTrailers(detail: TmdbDetailResponse): MediaTrailer[] {
@@ -282,8 +303,12 @@ function mapDetail(
     mediaType,
     preferredRegion,
   );
-  const { providers, providersRegion } = inCinemas
-    ? { providers: [] as WatchProvider[], providersRegion: cinemaRegion }
+  const { providers, providersRegion, watchProvidersLink } = inCinemas
+    ? {
+        providers: [] as WatchProvider[],
+        providersRegion: cinemaRegion,
+        watchProvidersLink: null,
+      }
     : mapProviders(detail, preferredRegion);
 
   return {
@@ -306,6 +331,7 @@ function mapDetail(
     cast,
     providers,
     providersRegion,
+    watchProvidersLink,
     inCinemas,
     director,
     creators,
