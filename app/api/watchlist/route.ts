@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { getAuth } from "@/lib/auth/server";
-import type { MediaItem, MediaType } from "@/lib/types";
+import type { MediaItem, MediaType, SavedMedia } from "@/lib/types";
 import {
   deleteWatchlistItem,
+  migrateWatchlistItems,
   saveWatchlistItem,
   setWatchlistItemWatched,
 } from "@/lib/watchlist";
+
+const MAX_MIGRATION_ITEMS = 1_000;
 
 type MediaIdentity = {
   id: number;
@@ -59,6 +62,79 @@ function isMediaItem(value: unknown): value is MediaItem {
     Array.isArray(candidate.genres) &&
     candidate.genres.every((genre) => typeof genre === "string")
   );
+}
+
+function isSavedMedia(value: unknown): value is SavedMedia {
+  if (!isMediaIdentity(value)) return false;
+  const candidate = value as Partial<SavedMedia>;
+
+  return (
+    typeof candidate.title === "string" &&
+    candidate.title.trim().length > 0 &&
+    typeof candidate.overview === "string" &&
+    typeof candidate.posterPath === "string" &&
+    typeof candidate.backdropPath === "string" &&
+    typeof candidate.year === "string" &&
+    typeof candidate.rating === "number" &&
+    Number.isFinite(candidate.rating) &&
+    candidate.rating >= 0 &&
+    candidate.rating <= 10 &&
+    Array.isArray(candidate.genres) &&
+    candidate.genres.every((genre) => typeof genre === "string") &&
+    typeof candidate.watched === "boolean" &&
+    typeof candidate.addedAt === "number" &&
+    Number.isFinite(candidate.addedAt) &&
+    candidate.addedAt >= 0 &&
+    candidate.addedAt <= 8.64e15
+  );
+}
+
+function dedupeMigrationItems(items: SavedMedia[]) {
+  const deduped = new Map<string, SavedMedia>();
+
+  for (const item of items) {
+    const key = `${item.mediaType}:${item.id}`;
+    const existing = deduped.get(key);
+
+    if (!existing) {
+      deduped.set(key, item);
+      continue;
+    }
+
+    deduped.set(key, {
+      ...existing,
+      watched: existing.watched || item.watched,
+      addedAt: Math.min(existing.addedAt, item.addedAt),
+    });
+  }
+
+  return [...deduped.values()];
+}
+
+export async function PUT(request: Request) {
+  const auth = await getAuthorizedUserId();
+  if (auth.response) return auth.response;
+
+  const body = (await request.json().catch(() => null)) as {
+    items?: unknown;
+  } | null;
+  if (
+    !body ||
+    !Array.isArray(body.items) ||
+    body.items.length > MAX_MIGRATION_ITEMS ||
+    !body.items.every(isSavedMedia)
+  ) {
+    return NextResponse.json(
+      { error: "Lista local no válida" },
+      { status: 400 },
+    );
+  }
+
+  const items = await migrateWatchlistItems(
+    auth.userId,
+    dedupeMigrationItems(body.items),
+  );
+  return NextResponse.json({ items });
 }
 
 export async function POST(request: Request) {

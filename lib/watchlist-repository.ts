@@ -77,6 +77,44 @@ export function createWatchlistRepository<
       return toSavedMedia(row);
     },
 
+    async migrateWatchlistItems(userId: string, items: SavedMedia[]) {
+      if (items.length === 0) return [];
+
+      const rows = await db
+        .insert(watchlistItems)
+        .values(
+          items.map((item) => ({
+            userId,
+            mediaId: item.id,
+            mediaType: item.mediaType,
+            title: item.title,
+            overview: item.overview,
+            posterPath: item.posterPath,
+            backdropPath: item.backdropPath,
+            releaseYear: item.year,
+            rating: item.rating,
+            genres: item.genres,
+            watched: item.watched,
+            addedAt: new Date(item.addedAt),
+          })),
+        )
+        .onConflictDoUpdate({
+          target: [
+            watchlistItems.userId,
+            watchlistItems.mediaType,
+            watchlistItems.mediaId,
+          ],
+          set: {
+            watched: sql`excluded.watched`,
+            updatedAt: sql`now()`,
+          },
+          setWhere: sql`not ${watchlistItems.watched} and excluded.watched`,
+        })
+        .returning();
+
+      return rows.map(toSavedMedia);
+    },
+
     async setWatchlistItemWatched(
       userId: string,
       mediaId: number,

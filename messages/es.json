@@ -170,6 +170,10 @@
     "addFailed": "No pudimos añadir el título. Inténtalo de nuevo.",
     "removeFailed": "No pudimos quitar el título. Inténtalo de nuevo.",
     "toggleFailed": "No pudimos cambiar el estado. Inténtalo de nuevo.",
+    "migrationFailed": "No pudimos sincronizar tu lista local. Conservamos la copia de este dispositivo para que puedas reintentarlo de forma segura.",
+    "migrationInvalid": "No pudimos leer tu lista local. Conservamos intacta la copia original de este dispositivo.",
+    "syncing": "Sincronizando tu lista local con tu cuenta…",
+    "retry": "Reintentar",
     "dismiss": "Cerrar mensaje"
   },
   "SignIn": {

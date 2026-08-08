@@ -15,6 +15,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
+    "test:watchlist-migration": "tsx scripts/watchlist-migration-smoke-test.ts",
     "db:check": "drizzle-kit check",
     "db:check:drift": "node scripts/check-schema-migration-drift.mjs",
     "db:check:immutable": "node scripts/check-migration-immutability.mjs",

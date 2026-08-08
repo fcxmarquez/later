@@ -170,6 +170,10 @@
     "addFailed": "We couldn't add the title. Please try again.",
     "removeFailed": "We couldn't remove the title. Please try again.",
     "toggleFailed": "We couldn't update the status. Please try again.",
+    "migrationFailed": "We couldn't sync your local list. Its device backup was kept so you can retry safely.",
+    "migrationInvalid": "We couldn't read your local list. Its original device backup was kept and was not changed.",
+    "syncing": "Syncing your local list to your account…",
+    "retry": "Retry",
     "dismiss": "Dismiss message"
   },
   "SignIn": {

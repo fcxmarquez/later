@@ -1,9 +1,9 @@
 "use client";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, Compass, Eye, Film, Play, Search, X } from "lucide-react";
 import { getAuthClient } from "@/lib/auth/client";
-import { clearGuestWatchlist, loadGuestWatchlist } from "@/lib/guest-storage";
+import { migrateGuestWatchlist } from "@/lib/guest-watchlist-migration";
 import type { HomeSection } from "@/lib/tmdb";
 import type { MediaItem, SavedMedia, WatchlistMode } from "@/lib/types";
 import { useWatchlist } from "@/store/watchlist";
@@ -46,7 +46,6 @@ export function AppShell({
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "pending" | "watched">("all");
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const legacyMigrationStarted = useRef(false);
   const isGuest = mode === "guest";
   const searchKey = `${locale}|${query}`;
   const isSearching = view === "search" && resolvedSearchKey !== searchKey;
@@ -64,32 +63,7 @@ export function AppShell({
   }, [initialHomeSections]);
   useEffect(() => {
     initialize(initialWatchlist, mode);
-    if (isGuest || legacyMigrationStarted.current) return;
-    legacyMigrationStarted.current = true;
-
-    const legacyItems = loadGuestWatchlist();
-    if (legacyItems.length === 0) {
-      clearGuestWatchlist();
-      return;
-    }
-
-    const migrateItem = async (item: SavedMedia) => {
-      const added = await useWatchlist.getState().add(item);
-      if (!added || !item.watched) return added;
-
-      const current = useWatchlist
-        .getState()
-        .items.find(
-          (saved) => saved.id === item.id && saved.mediaType === item.mediaType,
-        );
-      return current?.watched
-        ? true
-        : useWatchlist.getState().toggleWatched(item);
-    };
-
-    void Promise.all(legacyItems.map(migrateItem)).then((results) => {
-      if (results.every(Boolean)) clearGuestWatchlist();
-    });
+    if (!isGuest) void migrateGuestWatchlist();
   }, [initialWatchlist, initialize, isGuest, mode]);
   useEffect(() => {
     if (view !== "search") return;
