@@ -21,10 +21,12 @@ export function MediaCard({
   item,
   onOpen,
   layout = "rail",
+  subtitle,
 }: {
   item: MediaItem;
   onOpen: (item: MediaItem) => void;
   layout?: "grid" | "rail";
+  subtitle?: string;
 }) {
   const t = useTranslations("MediaCard");
   const tCommon = useTranslations("Common");
@@ -74,6 +76,9 @@ export function MediaCard({
       <p className="mt-1 text-xs text-zinc-500">
         {item.year} <span className="px-1">·</span> ★ {item.rating.toFixed(1)}
       </p>
+      {subtitle ? (
+        <p className="mt-1 truncate text-xs text-zinc-400">{subtitle}</p>
+      ) : null}
     </article>
   );
 }

@@ -1,6 +1,12 @@
 export const imageUrl = (
   path: string,
-  size: "poster" | "backdrop" | "profile" | "logo" | "still" = "poster",
+  size:
+    | "poster"
+    | "backdrop"
+    | "profile"
+    | "profileLarge"
+    | "logo"
+    | "still" = "poster",
 ) => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
@@ -8,6 +14,7 @@ export const imageUrl = (
     poster: "w500",
     backdrop: "original",
     profile: "w185",
+    profileLarge: "w500",
     logo: "w154",
     still: "w500",
   } as const;

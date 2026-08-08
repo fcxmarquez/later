@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState, type SyntheticEvent } from "react";
 import { Check, ChevronDown, Eye, Play, Plus, X } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { imageUrl, youtubeEmbedUrl, youtubeThumbUrl } from "@/lib/catalog";
 import type {
   CastMember,
@@ -116,29 +117,36 @@ function ProviderBadge({ provider }: { provider: WatchProvider }) {
 }
 
 function CastCard({ member }: { member: CastMember }) {
+  const t = useTranslations("Detail");
   const [failed, setFailed] = useState(!member.profilePath);
   return (
     <li className="detail-stagger w-[104px] shrink-0 sm:w-[116px]">
-      <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-zinc-800 ring-1 ring-white/10">
-        {failed || !member.profilePath ? (
-          <span className="grid size-full place-items-center bg-gradient-to-br from-zinc-700 to-zinc-900 text-lg font-semibold tracking-wide text-zinc-200">
-            {initials(member.name)}
-          </span>
-        ) : (
-          <Image
-            src={imageUrl(member.profilePath, "profile")}
-            alt={member.name}
-            fill
-            sizes="116px"
-            className="object-cover"
-            onError={() => setFailed(true)}
-          />
-        )}
-      </div>
-      <p className="mt-2 truncate text-sm font-medium text-zinc-100">
-        {member.name}
-      </p>
-      <p className="truncate text-xs text-zinc-500">{member.character}</p>
+      <Link
+        href={`/person/${member.id}`}
+        aria-label={t("personDetails", { name: member.name })}
+        className="group block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#07070a]"
+      >
+        <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-zinc-800 ring-1 ring-white/10 transition duration-300 group-hover:-translate-y-1 group-hover:ring-white/30">
+          {failed || !member.profilePath ? (
+            <span className="grid size-full place-items-center bg-gradient-to-br from-zinc-700 to-zinc-900 text-lg font-semibold tracking-wide text-zinc-200">
+              {initials(member.name)}
+            </span>
+          ) : (
+            <Image
+              src={imageUrl(member.profilePath, "profile")}
+              alt={member.name}
+              fill
+              sizes="116px"
+              className="object-cover transition duration-500 group-hover:scale-105"
+              onError={() => setFailed(true)}
+            />
+          )}
+        </div>
+        <p className="mt-2 truncate text-sm font-medium text-zinc-100">
+          {member.name}
+        </p>
+        <p className="truncate text-xs text-zinc-500">{member.character}</p>
+      </Link>
     </li>
   );
 }

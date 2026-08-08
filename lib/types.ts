@@ -19,6 +19,23 @@ export type CastMember = {
   profilePath: string | null;
 };
 
+export type PersonCredit = MediaItem & {
+  character: string;
+  episodeCount: number | null;
+};
+
+export type PersonDetail = {
+  id: number;
+  name: string;
+  biography: string;
+  birthday: string | null;
+  deathday: string | null;
+  placeOfBirth: string | null;
+  profilePath: string | null;
+  alsoKnownAs: string[];
+  credits: PersonCredit[];
+};
+
 export type WatchProvider = {
   id: number;
   name: string;
