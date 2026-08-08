@@ -8,7 +8,10 @@ import { imageUrl, youtubeEmbedUrl, youtubeThumbUrl } from "@/lib/catalog";
 import type {
   CastMember,
   MediaDetail,
+  MediaEpisode,
   MediaItem,
+  MediaSeason,
+  MediaSeasonDetail,
   MediaTrailer,
   WatchProvider,
 } from "@/lib/types";
@@ -22,6 +25,18 @@ function formatRuntime(minutes?: number | null) {
   const rest = minutes % 60;
   if (!hours) return `${rest} min`;
   return rest ? `${hours} h ${rest} min` : `${hours} h`;
+}
+
+function formatAirDate(value: string, locale: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
 }
 
 function formatRegionName(region: string, locale: string) {
@@ -57,6 +72,7 @@ function mergeDetail(item: MediaItem, detail: MediaDetail | null): MediaDetail {
       director: null,
       creators: [],
       trailers: [],
+      seasonList: [],
     };
   }
   return {
@@ -542,6 +558,239 @@ function ExpandableOverview({ text, id }: { text: string; id: string }) {
   );
 }
 
+function EpisodeCard({
+  episode,
+  locale,
+}: {
+  episode: MediaEpisode;
+  locale: string;
+}) {
+  const t = useTranslations("Detail");
+  const [stillFailed, setStillFailed] = useState(!episode.stillPath);
+  const dateLabel = formatAirDate(episode.airDate, locale);
+  const runtimeLabel = formatRuntime(episode.runtime);
+  const metaBits = [
+    dateLabel,
+    runtimeLabel,
+    episode.rating > 0 ? `★ ${episode.rating.toFixed(1)}` : null,
+  ].filter(Boolean);
+
+  return (
+    <li className="w-[min(84vw,22rem)] shrink-0 sm:w-[22rem]">
+      <article className="h-full overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/10">
+        <div className="relative aspect-video overflow-hidden bg-zinc-900">
+          {!stillFailed && episode.stillPath ? (
+            <Image
+              src={imageUrl(episode.stillPath, "still")}
+              alt={t("episodeStillAlt", {
+                number: episode.episodeNumber,
+                title: episode.name,
+              })}
+              fill
+              sizes="(max-width: 640px) 84vw, 352px"
+              className="object-cover"
+              onError={() => setStillFailed(true)}
+            />
+          ) : (
+            <span className="absolute inset-0 grid place-items-center bg-gradient-to-br from-zinc-800 to-zinc-950 text-sm font-semibold tracking-[0.16em] text-zinc-500 uppercase">
+              S{episode.seasonNumber} · E{episode.episodeNumber}
+            </span>
+          )}
+          <span className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/80 to-transparent" />
+          <span className="absolute bottom-3 left-3 rounded-full bg-black/65 px-2.5 py-1 text-xs font-semibold text-zinc-100 backdrop-blur-md">
+            {t("episodeNumber", { number: episode.episodeNumber })}
+          </span>
+        </div>
+        <div className="p-4">
+          <h4 className="line-clamp-2 text-base font-semibold text-zinc-100">
+            {episode.name}
+          </h4>
+          {metaBits.length > 0 && (
+            <p className="mt-1 text-xs text-zinc-500">{metaBits.join(" · ")}</p>
+          )}
+          <p className="mt-3 line-clamp-3 text-sm leading-6 text-zinc-400">
+            {episode.overview}
+          </p>
+        </div>
+      </article>
+    </li>
+  );
+}
+
+function EpisodeSection({
+  seriesId,
+  seasons,
+}: {
+  seriesId: number;
+  seasons: MediaSeason[];
+}) {
+  const t = useTranslations("Detail");
+  const locale = useLocale();
+  const headingId = useId();
+  const firstRegularSeason =
+    seasons.find(
+      (season) => season.seasonNumber > 0 && season.episodeCount > 0,
+    ) ||
+    seasons.find((season) => season.seasonNumber > 0) ||
+    seasons[0];
+  const [selectedSeasonNumber, setSelectedSeasonNumber] = useState(
+    firstRegularSeason.seasonNumber,
+  );
+  const [season, setSeason] = useState<MediaSeasonDetail | null>(null);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
+    "loading",
+  );
+  const [requestVersion, setRequestVersion] = useState(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const params = new URLSearchParams({
+      id: String(seriesId),
+      season: String(selectedSeasonNumber),
+      locale,
+    });
+
+    fetch(`/api/tmdb/season?${params}`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("season failed");
+        const data = (await response.json()) as {
+          season?: MediaSeasonDetail;
+        };
+        if (!data.season) throw new Error("missing season");
+        if (!controller.signal.aborted) {
+          setSeason(data.season);
+          setLoadState("ready");
+        }
+      })
+      .catch((error: Error) => {
+        if (error.name === "AbortError") return;
+        setLoadState("error");
+      });
+
+    return () => controller.abort();
+  }, [locale, requestVersion, selectedSeasonNumber, seriesId]);
+
+  return (
+    <section className="detail-stagger" aria-labelledby={headingId}>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h3
+            id={headingId}
+            className="text-xs font-bold tracking-[0.28em] text-zinc-500 uppercase"
+          >
+            {t("episodes")}
+          </h3>
+          <p className="mt-2 text-sm text-zinc-400">
+            {t("episodeCount", {
+              count:
+                seasons.find(
+                  (entry) => entry.seasonNumber === selectedSeasonNumber,
+                )?.episodeCount ?? 0,
+            })}
+          </p>
+        </div>
+
+        <div className="relative">
+          <label htmlFor={`${headingId}-season`} className="sr-only">
+            {t("seasonSelectLabel")}
+          </label>
+          <select
+            id={`${headingId}-season`}
+            value={selectedSeasonNumber}
+            onChange={(event) => {
+              setLoadState("loading");
+              setSeason(null);
+              setSelectedSeasonNumber(Number(event.target.value));
+            }}
+            className="min-h-11 appearance-none rounded-full border border-white/10 bg-white/[0.07] py-2.5 pr-11 pl-5 text-sm font-semibold text-zinc-100 transition outline-none hover:bg-white/[0.11] focus-visible:ring-2 focus-visible:ring-white/70"
+          >
+            {seasons.map((entry) => (
+              <option
+                key={entry.id}
+                value={entry.seasonNumber}
+                className="bg-zinc-900"
+              >
+                {entry.name} ·{" "}
+                {t("episodeCount", { count: entry.episodeCount })}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            size={17}
+            className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-zinc-400"
+            aria-hidden
+          />
+        </div>
+      </div>
+
+      <div className="mt-5" aria-busy={loadState === "loading"}>
+        {loadState === "loading" && (
+          <ul className="hide-scrollbar flex gap-4 overflow-x-auto pb-4">
+            {Array.from({ length: 3 }, (_, index) => (
+              <li
+                key={index}
+                className="w-[min(84vw,22rem)] shrink-0 overflow-hidden rounded-2xl bg-white/[0.045] ring-1 ring-white/10"
+              >
+                <div className="aspect-video animate-pulse bg-zinc-800/80" />
+                <div className="space-y-3 p-4">
+                  <div className="h-4 w-2/3 animate-pulse rounded bg-zinc-800" />
+                  <div className="h-3 w-1/2 animate-pulse rounded bg-zinc-800/70" />
+                  <div className="h-14 animate-pulse rounded bg-zinc-800/50" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {loadState === "error" && (
+          <div
+            role="alert"
+            className="rounded-2xl border border-amber-300/15 bg-amber-300/[0.06] p-5"
+          >
+            <p className="text-sm text-amber-200/90">{t("episodesError")}</p>
+            <button
+              type="button"
+              onClick={() => {
+                setLoadState("loading");
+                setSeason(null);
+                setRequestVersion((version) => version + 1);
+              }}
+              className="mt-4 min-h-11 rounded-full bg-white px-5 py-2 text-sm font-semibold text-black transition hover:scale-[1.02]"
+            >
+              {t("tryAgain")}
+            </button>
+          </div>
+        )}
+
+        {loadState === "ready" && season && season.episodes.length === 0 && (
+          <p className="rounded-2xl bg-white/[0.045] p-5 text-sm text-zinc-400 ring-1 ring-white/10">
+            {t("noEpisodes")}
+          </p>
+        )}
+
+        {loadState === "ready" && season && season.episodes.length > 0 && (
+          <>
+            {season.overview && (
+              <p className="mb-5 max-w-3xl text-sm leading-6 text-zinc-400">
+                {season.overview}
+              </p>
+            )}
+            <ul className="hide-scrollbar flex gap-4 overflow-x-auto pb-4">
+              {season.episodes.map((episode) => (
+                <EpisodeCard
+                  key={episode.id}
+                  episode={episode}
+                  locale={locale}
+                />
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function HeroBackdrop({ src }: { src: string }) {
   const [loaded, setLoaded] = useState(false);
 
@@ -653,7 +902,7 @@ export function DetailModal({
       if (event.key !== "Tab" || !dialogRef.current) return;
       const focusable = Array.from(
         dialogRef.current.querySelectorAll<HTMLElement>(
-          "button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex='-1'])",
+          "button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex='-1'])",
         ),
       );
       if (!focusable.length) return;
@@ -814,6 +1063,14 @@ export function DetailModal({
               </p>
             )}
           </section>
+
+          {view.mediaType === "tv" && view.seasonList.length > 0 && (
+            <EpisodeSection
+              key={`${view.id}-${locale}`}
+              seriesId={view.id}
+              seasons={view.seasonList}
+            />
+          )}
 
           {view.inCinemas ? (
             <section className="detail-stagger">
