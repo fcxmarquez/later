@@ -1,8 +1,10 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { TitleUnavailable } from "@/app/[locale]/_components/title-unavailable";
 import { RoutedDetailModal } from "@/components/title-detail-route";
 import { resolveLocale } from "@/i18n/locale";
-import { getTitleDetail, resolveProviderRegion } from "@/lib/tmdb-detail";
+import { getTitleDetail } from "@/lib/tmdb-detail";
+import { resolveProviderRegion } from "@/lib/tmdb-region";
 import type { MediaType } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +36,10 @@ export default async function InterceptedTitleRoute({
     requestHeaders.get("x-vercel-ip-country"),
   );
   const result = await getTitleDetail(id, mediaType, locale, region);
-  if (result.status !== "success") notFound();
+  if (result.status === "not-found") notFound();
+  if (result.status === "unavailable") {
+    return <TitleUnavailable presentation="modal" />;
+  }
 
   return <RoutedDetailModal detail={result.detail} />;
 }

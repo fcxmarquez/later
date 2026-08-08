@@ -3,6 +3,7 @@ import "server-only";
 import { cache } from "react";
 import type { AppLocale } from "@/i18n/routing";
 import { tmdbLanguage } from "@/i18n/routing";
+import { DEFAULT_PROVIDER_REGION } from "@/lib/tmdb-region";
 import type {
   CastMember,
   MediaDetail,
@@ -12,8 +13,6 @@ import type {
   WatchProvider,
   WatchProviderRegion,
 } from "@/lib/types";
-
-export const DEFAULT_PROVIDER_REGION: WatchProviderRegion = "US";
 
 const untitledByLocale = {
   es: "Sin título",
@@ -105,21 +104,6 @@ export type TitleDetailResult =
 
 const THEATRICAL_RELEASE_TYPES = new Set([2, 3]);
 const THEATRICAL_WINDOW_DAYS = 60;
-
-function isCountryCode(value: string | null | undefined): value is string {
-  return Boolean(value && /^[A-Za-z]{2}$/.test(value));
-}
-
-export function resolveProviderRegion(
-  override?: string | null,
-  geoCountry?: string | null,
-): WatchProviderRegion {
-  if (isCountryCode(override)) return override.toUpperCase();
-  if (isCountryCode(geoCountry) && geoCountry.toUpperCase() !== "XX") {
-    return geoCountry.toUpperCase();
-  }
-  return DEFAULT_PROVIDER_REGION;
-}
 
 function regionHasProviders(region: TmdbProviderRegion | undefined) {
   if (!region) return false;

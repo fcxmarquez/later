@@ -7,8 +7,13 @@ import { ArrowLeft, CalendarDays, MapPin, Play } from "lucide-react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { getAuthClient } from "@/lib/auth/client";
 import { imageUrl } from "@/lib/catalog";
-import type { PersonCredit, PersonDetail, SavedMedia } from "@/lib/types";
-import { type WatchlistMode, useWatchlist } from "@/store/watchlist";
+import type {
+  PersonCredit,
+  PersonDetail,
+  SavedMedia,
+  WatchlistMode,
+} from "@/lib/types";
+import { useWatchlist } from "@/store/watchlist";
 import { ExpandableText } from "./expandable-text";
 import { MediaCard } from "./media-card";
 import { ProfileMenu } from "./profile-menu";

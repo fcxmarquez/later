@@ -10,7 +10,7 @@ import { Link } from "@/i18n/navigation";
 import { imageUrl } from "@/lib/catalog";
 import type { MediaItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useWatchlist } from "@/store/watchlist";
+import { useWatchlistItem } from "@/store/watchlist";
 
 const AUTOPLAY_DELAY_MS = 6500;
 
@@ -137,7 +137,7 @@ export function FeaturedCarousel({ items }: FeaturedCarouselProps) {
       {canAutoplay ? (
         <div
           className="safe-page-x absolute inset-x-0 bottom-2 z-10 flex justify-center gap-0 sm:bottom-4 sm:gap-1 lg:bottom-6 lg:justify-start"
-          role="tablist"
+          role="group"
           aria-label={tHome("carouselDotsLabel")}
         >
           {items.map((item, index) => {
@@ -146,8 +146,7 @@ export function FeaturedCarousel({ items }: FeaturedCarouselProps) {
               <button
                 key={`${item.mediaType}-${item.id}-dot`}
                 type="button"
-                role="tab"
-                aria-selected={isActive}
+                aria-current={isActive ? "true" : undefined}
                 aria-label={tHome("carouselDot", { title: item.title })}
                 onClick={() => scrollTo(index)}
                 className="group grid size-11 place-items-center rounded-full"
@@ -171,16 +170,12 @@ export function FeaturedCarousel({ items }: FeaturedCarouselProps) {
 
 function FeaturedWatchlistButton({ item }: { item: MediaItem }) {
   const tHome = useTranslations("Home");
-  const saved = useWatchlist((state) =>
-    state.items.some(
-      (entry) => entry.id === item.id && entry.mediaType === item.mediaType,
-    ),
-  );
-  const add = useWatchlist((state) => state.add);
-  const remove = useWatchlist((state) => state.remove);
+  const { saved, isPending, add, remove } = useWatchlistItem(item);
   const [justAdded, setJustAdded] = useState(false);
 
   const toggleSaved = () => {
+    if (isPending) return;
+
     if (saved) {
       setJustAdded(false);
       void remove(item);
@@ -188,17 +183,21 @@ function FeaturedWatchlistButton({ item }: { item: MediaItem }) {
     }
 
     setJustAdded(true);
-    void add(item);
+    void add(item).then((added) => {
+      if (!added) setJustAdded(false);
+    });
   };
 
   return (
     <button
       type="button"
       onClick={toggleSaved}
+      disabled={isPending}
+      aria-busy={isPending}
       aria-label={saved ? tHome("removeFromList") : tHome("addToList")}
-      aria-pressed={saved}
+      aria-pressed={Boolean(saved)}
       className={cn(
-        "glass flex cursor-pointer items-center gap-2 rounded-full px-6 py-3.5 font-semibold whitespace-nowrap transition hover:scale-105 max-[359px]:px-3 max-[359px]:text-sm",
+        "glass flex cursor-pointer items-center gap-2 rounded-full px-6 py-3.5 font-semibold whitespace-nowrap transition hover:scale-105 disabled:cursor-wait disabled:opacity-70 max-[359px]:px-3 max-[359px]:text-sm",
         saved && justAdded && "watchlist-added",
       )}
     >

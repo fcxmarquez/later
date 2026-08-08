@@ -107,34 +107,3 @@ export function mapTmdbResults(
   }
   return mapped;
 }
-
-export async function fetchTmdbList(
-  path: string,
-  {
-    token,
-    language,
-    region,
-  }: {
-    token: string;
-    language: string;
-    region?: string;
-  },
-): Promise<TmdbListResult[]> {
-  const params = new URLSearchParams({ language });
-  if (region) params.set("region", region);
-
-  const response = await fetch(
-    `https://api.themoviedb.org/3/${path}?${params}`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-      next: { revalidate: 3600 },
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error(`TMDB ${path} failed with ${response.status}`);
-  }
-
-  const data: { results?: TmdbListResult[] } = await response.json();
-  return data.results ?? [];
-}

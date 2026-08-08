@@ -1,15 +1,8 @@
 "use client";
 
 import { create } from "zustand";
-import type { MediaItem, SavedMedia } from "@/lib/types";
-import {
-  clearGuestWatchlist,
-  isSavedMedia,
-  loadGuestWatchlist,
-  saveGuestWatchlist,
-} from "@/lib/guest-storage";
-
-export type WatchlistMode = "guest" | "authenticated";
+import type { MediaItem, SavedMedia, WatchlistMode } from "@/lib/types";
+import { loadGuestWatchlist, saveGuestWatchlist } from "@/lib/guest-storage";
 
 type MediaIdentity = Pick<MediaItem, "id" | "mediaType">;
 
@@ -19,6 +12,7 @@ type WatchlistStore = {
   items: SavedMedia[];
   mode: WatchlistMode | null;
   initialized: boolean;
+  pendingItems: Record<string, true>;
   error: WatchlistErrorKey | null;
   initialize: (items: SavedMedia[], mode: WatchlistMode) => void;
   clearError: () => void;
@@ -33,6 +27,16 @@ function isSameMedia(
   right: MediaIdentity,
 ) {
   return left.id === right.id && left.mediaType === right.mediaType;
+}
+
+function mediaIdentityKey(item: MediaIdentity) {
+  return `${item.mediaType}:${item.id}`;
+}
+
+function withoutPendingItem(pendingItems: Record<string, true>, key: string) {
+  const nextPendingItems = { ...pendingItems };
+  delete nextPendingItems[key];
+  return nextPendingItems;
 }
 
 async function requestWatchlist(
@@ -53,33 +57,42 @@ async function requestWatchlist(
   return (await response.json()) as { item: SavedMedia };
 }
 
-function persistGuestItems(items: SavedMedia[]) {
-  saveGuestWatchlist(items);
-}
-
 export const useWatchlist = create<WatchlistStore>((set, get) => ({
   items: [],
   mode: null,
   initialized: false,
+  pendingItems: {},
   error: null,
   initialize: (items, mode) => {
-    if (get().initialized) return;
+    if (get().initialized && get().mode === mode) return;
 
     if (mode === "guest") {
       set({
         items: loadGuestWatchlist(),
         mode,
         initialized: true,
+        pendingItems: {},
         error: null,
       });
       return;
     }
 
-    set({ items, mode, initialized: true, error: null });
+    set({
+      items,
+      mode,
+      initialized: true,
+      pendingItems: {},
+      error: null,
+    });
   },
   clearError: () => set({ error: null }),
   add: async (item) => {
-    if (get().items.some((saved) => isSameMedia(saved, item))) return true;
+    const state = get();
+    if (!state.initialized || !state.mode) return false;
+    if (state.items.some((saved) => isSameMedia(saved, item))) return true;
+
+    const key = mediaIdentityKey(item);
+    if (state.pendingItems[key]) return false;
 
     const optimisticItem: SavedMedia = {
       ...item,
@@ -87,15 +100,21 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
       addedAt: Date.now(),
     };
 
-    const nextItems = [...get().items, optimisticItem];
-    set({ items: nextItems, error: null });
-
-    if (get().mode === "guest") {
-      persistGuestItems(nextItems);
-      return true;
-    }
+    const nextItems = [...state.items, optimisticItem];
+    set((current) => ({
+      items: nextItems,
+      pendingItems: { ...current.pendingItems, [key]: true },
+      error: null,
+    }));
 
     try {
+      if (state.mode === "guest") {
+        if (!saveGuestWatchlist(nextItems)) {
+          throw new Error("watchlist-persist-failed");
+        }
+        return true;
+      }
+
       const result = await requestWatchlist("POST", item);
       if (result) {
         set((state) => ({
@@ -111,21 +130,37 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
         error: "addFailed",
       }));
       return false;
+    } finally {
+      set((current) => ({
+        pendingItems: withoutPendingItem(current.pendingItems, key),
+      }));
     }
   },
   remove: async (item) => {
-    const removed = get().items.find((saved) => isSameMedia(saved, item));
+    const state = get();
+    if (!state.initialized || !state.mode) return false;
+
+    const removed = state.items.find((saved) => isSameMedia(saved, item));
     if (!removed) return true;
 
-    const nextItems = get().items.filter((saved) => !isSameMedia(saved, item));
-    set({ items: nextItems, error: null });
+    const key = mediaIdentityKey(item);
+    if (state.pendingItems[key]) return false;
 
-    if (get().mode === "guest") {
-      persistGuestItems(nextItems);
-      return true;
-    }
+    const nextItems = state.items.filter((saved) => !isSameMedia(saved, item));
+    set((current) => ({
+      items: nextItems,
+      pendingItems: { ...current.pendingItems, [key]: true },
+      error: null,
+    }));
 
     try {
+      if (state.mode === "guest") {
+        if (!saveGuestWatchlist(nextItems)) {
+          throw new Error("watchlist-persist-failed");
+        }
+        return true;
+      }
+
       await requestWatchlist("DELETE", item);
       return true;
     } catch {
@@ -136,24 +171,40 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
         error: "removeFailed",
       }));
       return false;
+    } finally {
+      set((current) => ({
+        pendingItems: withoutPendingItem(current.pendingItems, key),
+      }));
     }
   },
   toggleWatched: async (item) => {
-    const saved = get().items.find((entry) => isSameMedia(entry, item));
+    const state = get();
+    if (!state.initialized || !state.mode) return false;
+
+    const saved = state.items.find((entry) => isSameMedia(entry, item));
     if (!saved) return false;
 
+    const key = mediaIdentityKey(item);
+    if (state.pendingItems[key]) return false;
+
     const watched = !saved.watched;
-    const nextItems = get().items.map((entry) =>
+    const nextItems = state.items.map((entry) =>
       isSameMedia(entry, item) ? { ...entry, watched } : entry,
     );
-    set({ items: nextItems, error: null });
-
-    if (get().mode === "guest") {
-      persistGuestItems(nextItems);
-      return true;
-    }
+    set((current) => ({
+      items: nextItems,
+      pendingItems: { ...current.pendingItems, [key]: true },
+      error: null,
+    }));
 
     try {
+      if (state.mode === "guest") {
+        if (!saveGuestWatchlist(nextItems)) {
+          throw new Error("watchlist-persist-failed");
+        }
+        return true;
+      }
+
       const result = await requestWatchlist("PATCH", { ...item, watched });
       if (result) {
         set((state) => ({
@@ -173,9 +224,26 @@ export const useWatchlist = create<WatchlistStore>((set, get) => ({
         error: "toggleFailed",
       }));
       return false;
+    } finally {
+      set((current) => ({
+        pendingItems: withoutPendingItem(current.pendingItems, key),
+      }));
     }
   },
   has: (item) => get().items.some((saved) => isSameMedia(saved, item)),
 }));
 
-export { clearGuestWatchlist, isSavedMedia as isLegacySavedMedia };
+export function useWatchlistItem(item: MediaIdentity) {
+  const key = mediaIdentityKey(item);
+  const saved = useWatchlist((state) =>
+    state.items.find((entry) => isSameMedia(entry, item)),
+  );
+  const isPending = useWatchlist(
+    (state) => !state.initialized || Boolean(state.pendingItems[key]),
+  );
+  const add = useWatchlist((state) => state.add);
+  const remove = useWatchlist((state) => state.remove);
+  const toggleWatched = useWatchlist((state) => state.toggleWatched);
+
+  return { saved, isPending, add, remove, toggleWatched };
+}

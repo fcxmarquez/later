@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 import { useRouter } from "@/i18n/navigation";
-import type { MediaDetail, SavedMedia } from "@/lib/types";
-import { type WatchlistMode, useWatchlist } from "@/store/watchlist";
+import type { MediaDetail, SavedMedia, WatchlistMode } from "@/lib/types";
+import { useWatchlist } from "@/store/watchlist";
 import { DetailModal } from "./detail-modal";
 import { WatchlistErrorToast } from "./watchlist-error-toast";
 
@@ -12,11 +12,7 @@ export function RoutedDetailModal({ detail }: { detail: MediaDetail }) {
 
   return (
     <>
-      <DetailModal
-        item={detail}
-        initialDetail={detail}
-        close={() => router.back()}
-      />
+      <DetailModal detail={detail} close={() => router.back()} />
       <WatchlistErrorToast />
     </>
   );
@@ -41,8 +37,7 @@ export function RoutedDetailPage({
   return (
     <>
       <DetailModal
-        item={detail}
-        initialDetail={detail}
+        detail={detail}
         close={() => router.push("/")}
         presentation="page"
       />

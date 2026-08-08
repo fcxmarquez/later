@@ -17,13 +17,12 @@ import type {
   CastMember,
   MediaDetail,
   MediaEpisode,
-  MediaItem,
   MediaSeason,
   MediaSeasonDetail,
   MediaTrailer,
   WatchProvider,
 } from "@/lib/types";
-import { useWatchlist } from "@/store/watchlist";
+import { useWatchlistItem } from "@/store/watchlist";
 import { ExpandableText } from "./expandable-text";
 
 function formatRuntime(minutes?: number | null) {
@@ -63,36 +62,6 @@ function initials(name: string) {
     .map((part) => part[0])
     .join("")
     .toUpperCase();
-}
-
-function mergeDetail(item: MediaItem, detail: MediaDetail | null): MediaDetail {
-  if (!detail) {
-    return {
-      ...item,
-      cast: [],
-      providers: [],
-      providersRegion: null,
-      inCinemas: false,
-      runtime: null,
-      seasons: null,
-      status: null,
-      director: null,
-      creators: [],
-      trailers: [],
-      seasonList: [],
-    };
-  }
-  return {
-    ...item,
-    ...detail,
-    title: detail.title || item.title,
-    overview: detail.overview || item.overview,
-    posterPath: detail.posterPath || item.posterPath,
-    backdropPath: detail.backdropPath || item.backdropPath,
-    genres: detail.genres.length ? detail.genres : item.genres,
-    year: detail.year || item.year,
-    rating: detail.rating || item.rating,
-  };
 }
 
 function ProviderBadge({ provider }: { provider: WatchProvider }) {
@@ -701,25 +670,19 @@ function HeroBackdrop({ src }: { src: string }) {
 }
 
 export function DetailModal({
-  item,
-  initialDetail,
+  detail: view,
   close,
   presentation = "modal",
 }: {
-  item: MediaItem;
-  initialDetail?: MediaDetail;
+  detail: MediaDetail;
   close: () => void;
   presentation?: "modal" | "page";
 }) {
   const t = useTranslations("Detail");
   const tCommon = useTranslations("Common");
   const locale = useLocale();
-  const saved = useWatchlist((state) =>
-    state.items.find(
-      (entry) => entry.id === item.id && entry.mediaType === item.mediaType,
-    ),
-  );
-  const { add, remove, toggleWatched } = useWatchlist();
+  const { saved, isPending, add, remove, toggleWatched } =
+    useWatchlistItem(view);
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLElement>(null);
@@ -727,10 +690,6 @@ export function DetailModal({
   const initialPhase = presentation === "modal" ? "enter" : "shown";
   const phaseRef = useRef<"enter" | "shown" | "exit">(initialPhase);
   const [phase, setPhase] = useState<"enter" | "shown" | "exit">(initialPhase);
-  const [detail, setDetail] = useState<MediaDetail | null>(
-    initialDetail ?? null,
-  );
-  const [loadError, setLoadError] = useState(false);
   const [trailerPlayer, setTrailerPlayer] = useState<TrailerPlayerState | null>(
     null,
   );
@@ -740,7 +699,6 @@ export function DetailModal({
     trailerPlayerRef.current = trailerPlayer;
   }, [trailerPlayer]);
 
-  const view = mergeDetail(item, detail);
   const runtimeLabel = formatRuntime(view.runtime);
   const creditLine = view.director
     ? t("directedBy", { name: view.director })
@@ -770,34 +728,6 @@ export function DetailModal({
     });
     return () => cancelAnimationFrame(frame);
   }, [presentation]);
-
-  useEffect(() => {
-    if (initialDetail) {
-      return;
-    }
-    const controller = new AbortController();
-    const params = new URLSearchParams({
-      id: String(item.id),
-      type: item.mediaType,
-      locale,
-    });
-    fetch(`/api/tmdb/detail?${params}`, {
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("detail failed");
-        const data = (await response.json()) as { detail?: MediaDetail };
-        if (!data.detail) throw new Error("missing detail");
-        if (!controller.signal.aborted) {
-          setDetail(data.detail);
-        }
-      })
-      .catch((error: Error) => {
-        if (error.name === "AbortError") return;
-        setLoadError(true);
-      });
-    return () => controller.abort();
-  }, [initialDetail, item.id, item.mediaType, locale]);
 
   useEffect(() => {
     if (presentation !== "modal") return;
@@ -954,8 +884,10 @@ export function DetailModal({
                 {!saved ? (
                   <button
                     type="button"
-                    onClick={() => add(item)}
-                    className="flex items-center gap-2 rounded-full bg-white px-6 py-3.5 font-semibold text-black transition hover:scale-[1.03]"
+                    onClick={() => void add(view)}
+                    disabled={isPending}
+                    aria-busy={isPending}
+                    className="flex items-center gap-2 rounded-full bg-white px-6 py-3.5 font-semibold text-black transition hover:scale-[1.03] disabled:cursor-wait disabled:opacity-70"
                   >
                     <Plus size={19} /> {t("addToList")}
                   </button>
@@ -963,16 +895,20 @@ export function DetailModal({
                   <>
                     <button
                       type="button"
-                      onClick={() => toggleWatched(item)}
-                      className={`flex items-center gap-2 rounded-full px-6 py-3.5 font-semibold transition hover:scale-[1.03] ${saved.watched ? "bg-emerald-400 text-black" : "bg-white text-black"}`}
+                      onClick={() => void toggleWatched(view)}
+                      disabled={isPending}
+                      aria-busy={isPending}
+                      className={`flex items-center gap-2 rounded-full px-6 py-3.5 font-semibold transition hover:scale-[1.03] disabled:cursor-wait disabled:opacity-70 ${saved.watched ? "bg-emerald-400 text-black" : "bg-white text-black"}`}
                     >
                       {saved.watched ? <Check size={19} /> : <Eye size={19} />}{" "}
                       {saved.watched ? t("alreadyWatched") : t("markWatched")}
                     </button>
                     <button
                       type="button"
-                      onClick={() => remove(item)}
-                      className="rounded-full bg-white/10 px-6 py-3.5 font-semibold backdrop-blur-md transition hover:bg-white/20"
+                      onClick={() => void remove(view)}
+                      disabled={isPending}
+                      aria-busy={isPending}
+                      className="rounded-full bg-white/10 px-6 py-3.5 font-semibold backdrop-blur-md transition hover:bg-white/20 disabled:cursor-wait disabled:opacity-70"
                     >
                       {t("removeFromList")}
                     </button>
@@ -997,11 +933,6 @@ export function DetailModal({
             />
             {creditLine && (
               <p className="mt-5 text-sm text-zinc-500">{creditLine}</p>
-            )}
-            {loadError && (
-              <p className="mt-4 text-sm text-amber-300/90">
-                {t("enrichmentError")}
-              </p>
             )}
           </section>
 

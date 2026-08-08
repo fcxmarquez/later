@@ -1,8 +1,12 @@
+import "client-only";
+
 import type { SavedMedia } from "@/lib/types";
 
 export const GUEST_WATCHLIST_KEY = "later-watchlist";
+const GUEST_WATCHLIST_VERSION = 1;
 
 type StoredWatchlist = {
+  version?: number;
   state?: {
     items?: unknown[];
   };
@@ -36,22 +40,39 @@ export function loadGuestWatchlist(): SavedMedia[] {
     if (!raw) return [];
 
     const parsed = JSON.parse(raw) as StoredWatchlist;
+    if (
+      parsed.version !== undefined &&
+      parsed.version !== GUEST_WATCHLIST_VERSION
+    ) {
+      return [];
+    }
     return parsed.state?.items?.filter(isSavedMedia) ?? [];
   } catch {
     return [];
   }
 }
 
-export function saveGuestWatchlist(items: SavedMedia[]) {
-  if (typeof window === "undefined") return;
+export function saveGuestWatchlist(items: SavedMedia[]): boolean {
+  if (typeof window === "undefined") return false;
 
-  window.localStorage.setItem(
-    GUEST_WATCHLIST_KEY,
-    JSON.stringify({ state: { items } }),
-  );
+  try {
+    window.localStorage.setItem(
+      GUEST_WATCHLIST_KEY,
+      JSON.stringify({ version: GUEST_WATCHLIST_VERSION, state: { items } }),
+    );
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-export function clearGuestWatchlist() {
-  if (typeof window === "undefined") return;
-  window.localStorage.removeItem(GUEST_WATCHLIST_KEY);
+export function clearGuestWatchlist(): boolean {
+  if (typeof window === "undefined") return false;
+
+  try {
+    window.localStorage.removeItem(GUEST_WATCHLIST_KEY);
+    return true;
+  } catch {
+    return false;
+  }
 }

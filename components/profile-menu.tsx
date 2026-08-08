@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { LoaderCircle, LogIn, LogOut } from "lucide-react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
@@ -29,6 +29,8 @@ export function ProfileMenu({
   const [phase, setPhase] = useState<MenuPhase>("closed");
   const phaseRef = useRef<MenuPhase>("closed");
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const isOpen = phase === "open";
 
@@ -42,10 +44,16 @@ export function ProfileMenu({
     setMenuPhase("open");
   };
 
-  const closeMenu = () => {
+  const closeMenu = useCallback((restoreFocus = false) => {
     if (phaseRef.current !== "open") return;
-    setMenuPhase("exit");
-  };
+    const nextPhase = window.matchMedia("(prefers-reduced-motion: reduce)")
+      .matches
+      ? "closed"
+      : "exit";
+    phaseRef.current = nextPhase;
+    setPhase(nextPhase);
+    if (restoreFocus) triggerRef.current?.focus();
+  }, []);
 
   const toggleMenu = () => {
     if (phaseRef.current === "open") closeMenu();
@@ -55,24 +63,69 @@ export function ProfileMenu({
   useEffect(() => {
     if (!isOpen) return;
 
+    const focusFrame = requestAnimationFrame(() => {
+      menuRef.current
+        ?.querySelector<HTMLElement>(
+          "[role='menuitem']:not([disabled]), [role='menuitemradio']:not([disabled])",
+        )
+        ?.focus();
+    });
+
     const onPointerDown = (event: MouseEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
-        if (phaseRef.current === "open") setMenuPhase("exit");
+        closeMenu();
       }
     };
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && phaseRef.current === "open") {
-        setMenuPhase("exit");
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeMenu(true);
+        return;
       }
+
+      if (event.key === "Tab") {
+        closeMenu();
+        return;
+      }
+
+      if (
+        event.key !== "ArrowDown" &&
+        event.key !== "ArrowUp" &&
+        event.key !== "Home" &&
+        event.key !== "End"
+      )
+        return;
+
+      const menuItems = Array.from(
+        menuRef.current?.querySelectorAll<HTMLElement>(
+          "[role='menuitem']:not([disabled]), [role='menuitemradio']:not([disabled])",
+        ) ?? [],
+      );
+      if (menuItems.length === 0) return;
+
+      event.preventDefault();
+      const currentIndex = menuItems.indexOf(
+        document.activeElement as HTMLElement,
+      );
+      const nextIndex =
+        event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? menuItems.length - 1
+            : event.key === "ArrowUp"
+              ? (currentIndex - 1 + menuItems.length) % menuItems.length
+              : (currentIndex + 1) % menuItems.length;
+      menuItems[nextIndex]?.focus();
     };
 
     document.addEventListener("mousedown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
     return () => {
+      cancelAnimationFrame(focusFrame);
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [isOpen]);
+  }, [closeMenu, isOpen]);
 
   const initial = isGuest ? "I" : userName?.charAt(0).toUpperCase() || "F";
   const label = isGuest ? t("guest") : userName || t("signedIn");
@@ -86,6 +139,7 @@ export function ProfileMenu({
   return (
     <div ref={rootRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         className="glass flex min-h-11 min-w-11 items-center gap-2 rounded-full p-1 transition hover:bg-white/5 lg:pr-3"
         aria-haspopup="menu"
@@ -93,6 +147,11 @@ export function ProfileMenu({
         aria-controls={menuId}
         title={isGuest ? t("guestMode") : t("signedIn")}
         onClick={toggleMenu}
+        onKeyDown={(event) => {
+          if (event.key !== "ArrowDown") return;
+          event.preventDefault();
+          openMenu();
+        }}
       >
         <span
           className={`grid size-8 shrink-0 place-items-center rounded-full text-sm font-bold ${
@@ -108,9 +167,11 @@ export function ProfileMenu({
 
       {phase !== "closed" && (
         <div
+          ref={menuRef}
           id={menuId}
           role="menu"
           aria-label={label}
+          inert={phase === "exit"}
           onAnimationEnd={(event) => {
             if (event.target !== event.currentTarget) return;
             if (phaseRef.current === "exit") setMenuPhase("closed");
@@ -160,7 +221,7 @@ export function ProfileMenu({
             <Link
               href="/auth/sign-in"
               role="menuitem"
-              onClick={closeMenu}
+              onClick={() => closeMenu()}
               className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-zinc-200 transition hover:bg-white/10"
             >
               <LogIn size={16} />
