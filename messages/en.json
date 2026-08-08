@@ -105,6 +105,12 @@
     "addToList": "Add to my list"
   },
   "Detail": {
+    "metadataTitle": "{title} — Later",
+    "metadataFallback": "Title details — Later",
+    "metadataDescription": "Details, cast, trailers, and availability for {title}.",
+    "back": "Back",
+    "notFoundTitle": "We couldn't find this title",
+    "notFoundBody": "This movie or series may have moved or is no longer available.",
     "close": "Close",
     "showMore": "Show more",
     "showLess": "Show less",

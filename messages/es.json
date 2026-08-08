@@ -105,6 +105,12 @@
     "addToList": "Añadir a mi lista"
   },
   "Detail": {
+    "metadataTitle": "{title} — Later",
+    "metadataFallback": "Detalles del título — Later",
+    "metadataDescription": "Detalles, reparto, tráilers y disponibilidad de {title}.",
+    "back": "Volver",
+    "notFoundTitle": "No encontramos este título",
+    "notFoundBody": "Es posible que esta película o serie haya cambiado o ya no esté disponible.",
     "close": "Cerrar",
     "showMore": "Ver más",
     "showLess": "Ver menos",

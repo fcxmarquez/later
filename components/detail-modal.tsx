@@ -2,7 +2,14 @@
 
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useId, useRef, useState, type SyntheticEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type SyntheticEvent,
+} from "react";
 import { Check, ChevronDown, Eye, Play, Plus, X } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { imageUrl, youtubeEmbedUrl, youtubeThumbUrl } from "@/lib/catalog";
@@ -17,7 +24,6 @@ import type {
   WatchProvider,
 } from "@/lib/types";
 import { useWatchlist } from "@/store/watchlist";
-import { useDetailNavigation } from "@/store/detail-navigation";
 import { ExpandableText } from "./expandable-text";
 
 function formatRuntime(minutes?: number | null) {
@@ -116,26 +122,13 @@ function ProviderBadge({ provider }: { provider: WatchProvider }) {
   );
 }
 
-function CastCard({
-  member,
-  origin,
-  returnPath,
-}: {
-  member: CastMember;
-  origin: MediaItem;
-  returnPath: string;
-}) {
+function CastCard({ member }: { member: CastMember }) {
   const t = useTranslations("Detail");
   const [failed, setFailed] = useState(!member.profilePath);
   return (
     <li className="detail-stagger w-[104px] shrink-0 sm:w-[116px]">
       <Link
         href={`/person/${member.id}`}
-        onClick={() =>
-          useDetailNavigation
-            .getState()
-            .rememberPersonOrigin(origin, returnPath)
-        }
         aria-label={t("personDetails", { name: member.name })}
         className="group block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#07070a]"
       >
@@ -709,12 +702,14 @@ function HeroBackdrop({ src }: { src: string }) {
 
 export function DetailModal({
   item,
+  initialDetail,
   close,
-  returnPath,
+  presentation = "modal",
 }: {
   item: MediaItem;
+  initialDetail?: MediaDetail;
   close: () => void;
-  returnPath: string;
+  presentation?: "modal" | "page";
 }) {
   const t = useTranslations("Detail");
   const tCommon = useTranslations("Common");
@@ -729,9 +724,12 @@ export function DetailModal({
   const descriptionId = useId();
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const phaseRef = useRef<"enter" | "shown" | "exit">("enter");
-  const [phase, setPhase] = useState<"enter" | "shown" | "exit">("enter");
-  const [detail, setDetail] = useState<MediaDetail | null>(null);
+  const initialPhase = presentation === "modal" ? "enter" : "shown";
+  const phaseRef = useRef<"enter" | "shown" | "exit">(initialPhase);
+  const [phase, setPhase] = useState<"enter" | "shown" | "exit">(initialPhase);
+  const [detail, setDetail] = useState<MediaDetail | null>(
+    initialDetail ?? null,
+  );
   const [loadError, setLoadError] = useState(false);
   const [trailerPlayer, setTrailerPlayer] = useState<TrailerPlayerState | null>(
     null,
@@ -750,21 +748,33 @@ export function DetailModal({
       ? t("createdBy", { names: view.creators.join(", ") })
       : null;
 
-  const requestClose = () => {
+  const requestClose = useCallback(() => {
+    if (presentation === "page") {
+      close();
+      return;
+    }
     if (phaseRef.current === "exit") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      close();
+      return;
+    }
     phaseRef.current = "exit";
     setPhase("exit");
-  };
+  }, [close, presentation]);
 
   useEffect(() => {
+    if (presentation !== "modal") return;
     const frame = requestAnimationFrame(() => {
       phaseRef.current = "shown";
       setPhase("shown");
     });
     return () => cancelAnimationFrame(frame);
-  }, []);
+  }, [presentation]);
 
   useEffect(() => {
+    if (initialDetail) {
+      return;
+    }
     const controller = new AbortController();
     const params = new URLSearchParams({
       id: String(item.id),
@@ -787,9 +797,10 @@ export function DetailModal({
         setLoadError(true);
       });
     return () => controller.abort();
-  }, [item.id, item.mediaType, locale]);
+  }, [initialDetail, item.id, item.mediaType, locale]);
 
   useEffect(() => {
+    if (presentation !== "modal") return;
     const previousFocus = document.activeElement as HTMLElement | null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -825,7 +836,7 @@ export function DetailModal({
       document.body.style.overflow = previousOverflow;
       previousFocus?.focus();
     };
-  }, []);
+  }, [presentation, requestClose]);
 
   const onPanelAnimationEnd = (event: SyntheticEvent<HTMLElement>) => {
     if (event.target !== event.currentTarget) return;
@@ -840,25 +851,42 @@ export function DetailModal({
       : null,
     view.rating > 0 ? `★ ${view.rating.toFixed(1)}` : null,
   ].filter(Boolean);
+  const Root = presentation === "modal" ? "div" : "main";
 
   return (
-    <div
-      className={`detail-overlay fixed inset-0 z-50 ${phase === "enter" ? "is-enter" : ""} ${phase === "shown" ? "is-shown" : ""} ${phase === "exit" ? "is-exit" : ""}`}
-      onClick={() => {
-        if (trailerPlayerRef.current) return;
-        requestClose();
-      }}
+    <Root
+      className={
+        presentation === "modal"
+          ? `detail-overlay fixed inset-0 z-50 ${phase === "enter" ? "is-enter" : ""} ${phase === "shown" ? "is-shown" : ""} ${phase === "exit" ? "is-exit" : ""}`
+          : "detail-page is-shown min-h-screen bg-[#07070a] supports-[height:100dvh]:min-h-dvh"
+      }
+      onClick={
+        presentation === "modal"
+          ? () => {
+              if (trailerPlayerRef.current) return;
+              requestClose();
+            }
+          : undefined
+      }
     >
-      <div className="detail-overlay-dim absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      {presentation === "modal" ? (
+        <div className="detail-overlay-dim absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      ) : null}
       <section
         ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
+        role={presentation === "modal" ? "dialog" : undefined}
+        aria-modal={presentation === "modal" ? "true" : undefined}
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        onClick={(event) => event.stopPropagation()}
-        onAnimationEnd={onPanelAnimationEnd}
-        className="detail-panel absolute inset-0 min-h-screen overflow-y-auto overscroll-contain bg-[#07070a] supports-[height:100dvh]:min-h-dvh"
+        onClick={
+          presentation === "modal"
+            ? (event) => event.stopPropagation()
+            : undefined
+        }
+        onAnimationEnd={
+          presentation === "modal" ? onPanelAnimationEnd : undefined
+        }
+        className={`detail-panel inset-0 min-h-screen bg-[#07070a] supports-[height:100dvh]:min-h-dvh ${presentation === "modal" ? "absolute overflow-y-auto overscroll-contain" : "relative"}`}
       >
         <div className="relative min-h-[72vh] bg-black supports-[height:100svh]:min-h-[72svh] sm:min-h-[78vh] supports-[height:100svh]:sm:min-h-[78svh]">
           {view.backdropPath ? (
@@ -889,12 +917,21 @@ export function DetailModal({
                   : tCommon("series")}
               </span>
 
-              <h2
-                id={titleId}
-                className="mt-4 text-4xl font-bold tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl"
-              >
-                {view.title}
-              </h2>
+              {presentation === "modal" ? (
+                <h2
+                  id={titleId}
+                  className="mt-4 text-4xl font-bold tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl"
+                >
+                  {view.title}
+                </h2>
+              ) : (
+                <h1
+                  id={titleId}
+                  className="mt-4 text-4xl font-bold tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl"
+                >
+                  {view.title}
+                </h1>
+              )}
 
               {view.tagline && (
                 <p className="mt-4 max-w-2xl text-base text-zinc-300 italic sm:text-lg">
@@ -1020,12 +1057,7 @@ export function DetailModal({
               </h3>
               <ul className="hide-scrollbar mt-5 flex gap-4 overflow-x-auto pb-4">
                 {view.cast.map((member) => (
-                  <CastCard
-                    key={member.id}
-                    member={member}
-                    origin={item}
-                    returnPath={returnPath}
-                  />
+                  <CastCard key={member.id} member={member} />
                 ))}
               </ul>
             </section>
@@ -1060,6 +1092,6 @@ export function DetailModal({
           onClosed={() => setTrailerPlayer(null)}
         />
       )}
-    </div>
+    </Root>
   );
 }

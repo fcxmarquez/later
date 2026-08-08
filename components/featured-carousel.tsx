@@ -6,6 +6,7 @@ import { Bookmark, Check, Play } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "@/i18n/navigation";
 import { imageUrl } from "@/lib/catalog";
 import type { MediaItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -15,10 +16,9 @@ const AUTOPLAY_DELAY_MS = 6500;
 
 type FeaturedCarouselProps = {
   items: MediaItem[];
-  onOpen: (item: MediaItem) => void;
 };
 
-export function FeaturedCarousel({ items, onOpen }: FeaturedCarouselProps) {
+export function FeaturedCarousel({ items }: FeaturedCarouselProps) {
   const tHome = useTranslations("Home");
   const add = useWatchlist((state) => state.add);
   const savedItems = useWatchlist((state) => state.items);
@@ -124,14 +124,14 @@ export function FeaturedCarousel({ items, onOpen }: FeaturedCarouselProps) {
                     {item.overview}
                   </p>
                   <div className="mt-7 flex gap-3 max-[359px]:gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onOpen(item)}
+                    <Link
+                      href={`/title/${item.mediaType}/${item.id}`}
+                      prefetch={false}
                       className="flex items-center gap-2 rounded-full bg-white px-6 py-3.5 font-semibold whitespace-nowrap text-black transition hover:scale-105 max-[359px]:px-3 max-[359px]:text-sm"
                     >
                       <Play size={18} fill="currentColor" />{" "}
                       {tHome("seeDetails")}
-                    </button>
+                    </Link>
                     <button
                       type="button"
                       disabled={saved}

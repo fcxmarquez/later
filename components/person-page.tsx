@@ -2,23 +2,13 @@
 
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, CalendarDays, MapPin, Play } from "lucide-react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { getAuthClient } from "@/lib/auth/client";
 import { imageUrl } from "@/lib/catalog";
-import type {
-  MediaItem,
-  PersonCredit,
-  PersonDetail,
-  SavedMedia,
-} from "@/lib/types";
+import type { PersonCredit, PersonDetail, SavedMedia } from "@/lib/types";
 import { type WatchlistMode, useWatchlist } from "@/store/watchlist";
-import {
-  type PersonOrigin,
-  useDetailNavigation,
-} from "@/store/detail-navigation";
-import { DetailModal } from "./detail-modal";
 import { ExpandableText } from "./expandable-text";
 import { MediaCard } from "./media-card";
 import { ProfileMenu } from "./profile-menu";
@@ -97,36 +87,9 @@ export function PersonPage({
   const locale = useLocale();
   const router = useRouter();
   const initialize = useWatchlist((state) => state.initialize);
-  const [selected, setSelected] = useState<MediaItem | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [profileFailed, setProfileFailed] = useState(false);
-  const returnTitleRef = useRef<PersonOrigin | null>(null);
-  const titleRestore = useDetailNavigation((state) => state.titleRestore);
-  const clearTitleRestore = useDetailNavigation(
-    (state) => state.clearTitleRestore,
-  );
-  const restoredTitle =
-    titleRestore?.returnPath === `/person/${person.id}`
-      ? titleRestore.title
-      : null;
-  const activeTitle = selected ?? restoredTitle;
-  const openModal = useCallback(
-    (item: MediaItem) => {
-      clearTitleRestore();
-      setSelected(item);
-    },
-    [clearTitleRestore],
-  );
-  const closeModal = useCallback(() => {
-    clearTitleRestore();
-    setSelected(null);
-  }, [clearTitleRestore]);
   const isGuest = mode === "guest";
-
-  useEffect(() => {
-    const origin = useDetailNavigation.getState().takePersonOrigin();
-    if (origin) returnTitleRef.current = origin;
-  }, []);
 
   useEffect(() => {
     initialize(initialWatchlist, mode);
@@ -192,14 +155,7 @@ export function PersonPage({
           <div className="pt-1 md:pt-8">
             <button
               type="button"
-              onClick={() => {
-                if (returnTitleRef.current) {
-                  useDetailNavigation
-                    .getState()
-                    .queueTitleRestore(returnTitleRef.current);
-                }
-                router.back();
-              }}
+              onClick={() => router.back()}
               className="inline-flex min-h-11 items-center gap-2 rounded-full text-sm text-zinc-400 transition hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
             >
               <ArrowLeft size={17} /> {t("back")}
@@ -270,7 +226,6 @@ export function PersonPage({
                 key={`${credit.mediaType}-${credit.id}`}
                 item={credit}
                 layout="grid"
-                onOpen={openModal}
                 subtitle={creditSubtitle(credit, t)}
               />
             ))}
@@ -283,13 +238,6 @@ export function PersonPage({
       </section>
 
       <WatchlistErrorToast />
-      {activeTitle && (
-        <DetailModal
-          item={activeTitle}
-          close={closeModal}
-          returnPath={`/person/${person.id}`}
-        />
-      )}
     </main>
   );
 }

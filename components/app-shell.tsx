@@ -1,6 +1,6 @@
 "use client";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Compass, Eye, Film, Play, Search, X } from "lucide-react";
 import { getAuthClient } from "@/lib/auth/client";
 import {
@@ -11,8 +11,6 @@ import {
 import { HOME_SECTION_IDS, type HomeSection } from "@/lib/tmdb";
 import type { MediaItem, SavedMedia } from "@/lib/types";
 import { type WatchlistMode, useWatchlist } from "@/store/watchlist";
-import { useDetailNavigation } from "@/store/detail-navigation";
-import { DetailModal } from "./detail-modal";
 import { FeaturedCarousel } from "./featured-carousel";
 import { MediaCard } from "./media-card";
 import {
@@ -48,7 +46,6 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
     null,
   );
   const [searchError, setSearchError] = useState(false);
-  const [selected, setSelected] = useState<MediaItem | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "pending" | "watched">("all");
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -59,10 +56,6 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
   const isSearching = view === "search" && resolvedSearchKey !== searchKey;
   const items = useWatchlist((state) => state.items);
   const initialize = useWatchlist((state) => state.initialize);
-  const titleRestore = useDetailNavigation((state) => state.titleRestore);
-  const clearTitleRestore = useDetailNavigation(
-    (state) => state.clearTitleRestore,
-  );
   const featuredItems = useMemo(() => {
     const trending = homeSections.find(
       (section) => section.id === "trending",
@@ -176,20 +169,6 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
     setView(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  const restoredTitle =
-    titleRestore?.returnPath === "/" ? titleRestore.title : null;
-  const activeTitle = selected ?? restoredTitle;
-  const openModal = useCallback(
-    (item: MediaItem) => {
-      clearTitleRestore();
-      setSelected(item);
-    },
-    [clearTitleRestore],
-  );
-  const closeModal = useCallback(() => {
-    clearTitleRestore();
-    setSelected(null);
-  }, [clearTitleRestore]);
   const signOut = async () => {
     setIsSigningOut(true);
     try {
@@ -272,14 +251,13 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
             </section>
           ) : (
             <>
-              <FeaturedCarousel items={featuredItems} onOpen={openModal} />
+              <FeaturedCarousel items={featuredItems} />
               {homeSections.map((section) => (
                 <MediaRow
                   key={section.id}
                   title={tHome(`sections.${section.id}.title`)}
                   subtitle={tHome(`sections.${section.id}.subtitle`)}
                   items={section.results}
-                  open={openModal}
                 />
               ))}
             </>
@@ -336,7 +314,6 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
                     key={`${item.mediaType}-${item.id}`}
                     item={item}
                     layout="grid"
-                    onOpen={openModal}
                   />
                 ))}
               </div>
@@ -395,7 +372,6 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
                   key={`${item.mediaType}-${item.id}`}
                   item={item}
                   layout="grid"
-                  onOpen={openModal}
                 />
               ))}
             </div>
@@ -476,9 +452,6 @@ export function AppShell({ mode, user, initialWatchlist }: AppShellProps) {
         ))}
       </nav>
       <WatchlistErrorToast />
-      {activeTitle && (
-        <DetailModal item={activeTitle} close={closeModal} returnPath="/" />
-      )}
     </main>
   );
 }
@@ -486,12 +459,10 @@ function MediaRow({
   title,
   subtitle,
   items,
-  open,
 }: {
   title: string;
   subtitle: string;
   items: MediaItem[];
-  open: (item: MediaItem) => void;
 }) {
   return (
     <section className="safe-page-left mb-16">
@@ -502,7 +473,6 @@ function MediaRow({
           <MediaCard
             key={`${title}-${item.mediaType}-${item.id}`}
             item={item}
-            onOpen={open}
           />
         ))}
       </div>

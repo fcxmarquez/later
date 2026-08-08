@@ -7,7 +7,11 @@ import { isAppLocale, routing } from "@/i18n/routing";
 const handleI18nRouting = createMiddleware(routing);
 
 function isGuestAllowedPath(pathname: string) {
-  return pathname === "/" || /^\/person\/\d+$/.test(pathname);
+  return (
+    pathname === "/" ||
+    /^\/person\/\d+$/.test(pathname) ||
+    /^\/title\/(movie|tv)\/\d+$/.test(pathname)
+  );
 }
 
 function pathnameHasLocale(pathname: string) {
