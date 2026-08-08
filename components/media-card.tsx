@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Check, Plus } from "lucide-react";
+import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { imageUrl } from "@/lib/catalog";
 import type { MediaItem } from "@/lib/types";
@@ -35,6 +36,19 @@ export function MediaCard({
     ),
   );
   const add = useWatchlist((state) => state.add);
+  const remove = useWatchlist((state) => state.remove);
+  const [justAdded, setJustAdded] = useState(false);
+
+  const toggleSaved = () => {
+    if (saved) {
+      setJustAdded(false);
+      void remove(item);
+      return;
+    }
+
+    setJustAdded(true);
+    void add(item);
+  };
   return (
     <article
       className={`group relative ${layout === "grid" ? "w-full min-w-0" : "w-[155px] shrink-0 sm:w-[190px] lg:w-[215px]"}`}
@@ -56,12 +70,10 @@ export function MediaCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-50 group-hover:opacity-100" />
         <button
           type="button"
-          disabled={Boolean(saved)}
-          onClick={() => {
-            if (!saved) add(item);
-          }}
-          className="absolute right-3 bottom-3 z-20 grid size-11 cursor-pointer place-items-center rounded-full bg-white text-black opacity-100 shadow-lg transition hover:scale-110 disabled:cursor-default sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
-          aria-label={saved ? t("alreadySaved") : t("addToList")}
+          onClick={toggleSaved}
+          className={`absolute right-3 bottom-3 z-20 grid size-11 cursor-pointer place-items-center rounded-full bg-white text-black opacity-100 shadow-lg transition hover:scale-110 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 ${saved && justAdded ? "watchlist-added" : ""}`}
+          aria-label={saved ? t("removeFromList") : t("addToList")}
+          aria-pressed={Boolean(saved)}
         >
           {saved ? <Check size={19} /> : <Plus size={20} />}
         </button>

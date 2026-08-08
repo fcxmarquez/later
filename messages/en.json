@@ -29,6 +29,8 @@
     "seeDetails": "See details",
     "inYourList": "In your list",
     "myList": "My list",
+    "addToList": "Add to my list",
+    "removeFromList": "Remove from my list",
     "carouselLabel": "Featured titles",
     "carouselDotsLabel": "Featured title slides",
     "carouselSlide": "Slide {current} of {total}",
@@ -102,7 +104,8 @@
     "openDetails": "See details for {title}",
     "posterAlt": "Poster for {title}",
     "alreadySaved": "Already in your list",
-    "addToList": "Add to my list"
+    "addToList": "Add to my list",
+    "removeFromList": "Remove from my list"
   },
   "Detail": {
     "metadataTitle": "{title} — Later",

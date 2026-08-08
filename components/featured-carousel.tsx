@@ -20,8 +20,6 @@ type FeaturedCarouselProps = {
 
 export function FeaturedCarousel({ items }: FeaturedCarouselProps) {
   const tHome = useTranslations("Home");
-  const add = useWatchlist((state) => state.add);
-  const savedItems = useWatchlist((state) => state.items);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const canAutoplay = items.length > 1;
   const [plugins] = useState(() => [
@@ -86,11 +84,6 @@ export function FeaturedCarousel({ items }: FeaturedCarouselProps) {
         <div className="flex touch-pan-y">
           {items.map((item, index) => {
             const isActive = index === selectedIndex;
-            const saved = savedItems.some(
-              (entry) =>
-                entry.id === item.id && entry.mediaType === item.mediaType,
-            );
-
             return (
               <article
                 key={`${item.mediaType}-${item.id}`}
@@ -132,15 +125,7 @@ export function FeaturedCarousel({ items }: FeaturedCarouselProps) {
                       <Play size={18} fill="currentColor" />{" "}
                       {tHome("seeDetails")}
                     </Link>
-                    <button
-                      type="button"
-                      disabled={saved}
-                      onClick={() => add(item)}
-                      className="glass flex items-center gap-2 rounded-full px-6 py-3.5 font-semibold whitespace-nowrap disabled:opacity-70 max-[359px]:px-3 max-[359px]:text-sm"
-                    >
-                      {saved ? <Check size={19} /> : <Bookmark size={19} />}{" "}
-                      {saved ? tHome("inYourList") : tHome("myList")}
-                    </button>
+                    <FeaturedWatchlistButton item={item} />
                   </div>
                 </div>
               </article>
@@ -181,5 +166,44 @@ export function FeaturedCarousel({ items }: FeaturedCarouselProps) {
         </div>
       ) : null}
     </section>
+  );
+}
+
+function FeaturedWatchlistButton({ item }: { item: MediaItem }) {
+  const tHome = useTranslations("Home");
+  const saved = useWatchlist((state) =>
+    state.items.some(
+      (entry) => entry.id === item.id && entry.mediaType === item.mediaType,
+    ),
+  );
+  const add = useWatchlist((state) => state.add);
+  const remove = useWatchlist((state) => state.remove);
+  const [justAdded, setJustAdded] = useState(false);
+
+  const toggleSaved = () => {
+    if (saved) {
+      setJustAdded(false);
+      void remove(item);
+      return;
+    }
+
+    setJustAdded(true);
+    void add(item);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={toggleSaved}
+      aria-label={saved ? tHome("removeFromList") : tHome("addToList")}
+      aria-pressed={saved}
+      className={cn(
+        "glass flex cursor-pointer items-center gap-2 rounded-full px-6 py-3.5 font-semibold whitespace-nowrap transition hover:scale-105 max-[359px]:px-3 max-[359px]:text-sm",
+        saved && justAdded && "watchlist-added",
+      )}
+    >
+      {saved ? <Check size={19} /> : <Bookmark size={19} />}{" "}
+      {saved ? tHome("inYourList") : tHome("myList")}
+    </button>
   );
 }

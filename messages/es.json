@@ -29,6 +29,8 @@
     "seeDetails": "Ver detalles",
     "inYourList": "En tu lista",
     "myList": "Mi lista",
+    "addToList": "Añadir a mi lista",
+    "removeFromList": "Quitar de mi lista",
     "carouselLabel": "Títulos destacados",
     "carouselDotsLabel": "Diapositivas de títulos destacados",
     "carouselSlide": "Diapositiva {current} de {total}",
@@ -102,7 +104,8 @@
     "openDetails": "Ver detalles de {title}",
     "posterAlt": "Póster de {title}",
     "alreadySaved": "Ya está en tu lista",
-    "addToList": "Añadir a mi lista"
+    "addToList": "Añadir a mi lista",
+    "removeFromList": "Quitar de mi lista"
   },
   "Detail": {
     "metadataTitle": "{title} — Later",
