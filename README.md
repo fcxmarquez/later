@@ -12,6 +12,8 @@ pnpm run dev
 
 Set `DATABASE_URL` to Neon’s pooled connection, `DATABASE_URL_UNPOOLED` to the direct URL (without `-pooler`, used by migrations), `NEON_AUTH_BASE_URL` to the branch Auth URL, and generate `NEON_AUTH_COOKIE_SECRET` with `openssl rand -base64 32`. Add a TMDB read token as `TMDB_API_TOKEN` to load the live catalog; without it the catalog API returns empty and the UI shows skeletons then an error/empty state.
 
+Set `STREAMING_AVAILABILITY_API_KEY` to a server-side key from the [Streaming Availability developer platform](https://developers.movieofthenight.com/) to make provider badges open title-specific provider links. Without it, Later still shows TMDB/JustWatch availability, but provider badges are intentionally non-interactive and the explicit “View all watch options” link opens the regional aggregator page.
+
 You can use the app as a guest without signing in: in that mode the watchlist is stored in the browser’s LocalStorage. Any Google user can sign in for cloud sync with Neon Auth and Postgres. Users and sessions live in the managed `neon_auth` schema; each authenticated list and watched/pending state live in `public.watchlist_items`, isolated by user ID. On sign-in, the client batch-merges the LocalStorage list into that user's Postgres watchlist. Existing account metadata is preserved, watched state only moves forward, guest save timestamps are retained for new rows, and the device backup is cleared only after the authenticated merge succeeds.
 
 The Postgres schema is defined with Drizzle in `db/schema.ts`. After changing the schema:

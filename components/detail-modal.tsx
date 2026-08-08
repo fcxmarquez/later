@@ -64,29 +64,29 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-function ProviderBadge({
-  provider,
-  watchLink,
-}: {
-  provider: WatchProvider;
-  watchLink: string | null;
-}) {
+function ProviderBadge({ provider }: { provider: WatchProvider }) {
   const t = useTranslations("Detail");
-  const [failed, setFailed] = useState(false);
+  const logo =
+    provider.logoUrl ||
+    (provider.logoPath ? imageUrl(provider.logoPath, "logo") : null);
+  const [failed, setFailed] = useState(!logo);
   const badge = (
     <>
       <div className="relative size-14 overflow-hidden rounded-2xl bg-white shadow-[0_10px_30px_rgba(0,0,0,.35)] ring-1 ring-white/15 transition duration-300 group-hover:-translate-y-1 group-hover:ring-white/35">
-        {failed ? (
+        {failed || !logo ? (
           <span className="grid size-full place-items-center px-1 text-center text-[10px] font-bold text-zinc-800">
             {provider.name}
           </span>
         ) : (
           <Image
-            src={imageUrl(provider.logoPath, "logo")}
+            src={logo}
             alt={provider.name}
             fill
             sizes="56px"
-            className="object-cover"
+            unoptimized={Boolean(provider.logoUrl)}
+            className={
+              provider.logoUrl ? "object-contain p-1.5" : "object-cover"
+            }
             onError={() => setFailed(true)}
           />
         )}
@@ -99,9 +99,9 @@ function ProviderBadge({
 
   return (
     <li className="detail-stagger min-w-[4.75rem]">
-      {watchLink ? (
+      {provider.link ? (
         <a
-          href={watchLink}
+          href={provider.link}
           target="_blank"
           rel="noopener noreferrer"
           aria-label={t("providerLinkLabel", { provider: provider.name })}
@@ -1000,22 +1000,34 @@ export function DetailModal({
                 </p>
                 <ul className="mt-5 flex gap-4 overflow-x-auto pb-2">
                   {view.providers.map((provider) => (
-                    <ProviderBadge
-                      key={provider.id}
-                      provider={provider}
-                      watchLink={view.watchProvidersLink}
-                    />
+                    <ProviderBadge key={provider.id} provider={provider} />
                   ))}
                 </ul>
+                {view.providersSource === "tmdb" && view.watchProvidersLink && (
+                  <a
+                    href={view.watchProvidersLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-block text-sm text-zinc-400 underline decoration-zinc-700 underline-offset-4 transition hover:text-zinc-200 focus-visible:text-zinc-200 focus-visible:outline-none"
+                  >
+                    {t("viewAllWatchOptions")}
+                  </a>
+                )}
                 <p className="mt-3 text-xs text-zinc-600">
                   {t("providerAttribution")}{" "}
                   <a
-                    href="https://www.justwatch.com/"
+                    href={
+                      view.providersSource === "streaming-availability"
+                        ? "https://docs.movieofthenight.com/"
+                        : "https://www.justwatch.com/"
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline decoration-zinc-700 underline-offset-2 transition hover:text-zinc-400 focus-visible:text-zinc-400 focus-visible:outline-none"
                   >
-                    JustWatch
+                    {view.providersSource === "streaming-availability"
+                      ? "Streaming Availability API"
+                      : "JustWatch"}
                   </a>
                   .
                 </p>
