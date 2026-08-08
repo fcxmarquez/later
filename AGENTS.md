@@ -6,6 +6,11 @@
 
 Standard commands live in `package.json` scripts: `pnpm run dev` (http://localhost:3000), `pnpm run format` / `pnpm run format:check`, `pnpm run lint`, `pnpm run typecheck`, `pnpm run build`. There is no app unit-test runner; CI runs formatting, lint, typecheck, migration validation and smoke testing, and the production build. The dev server uses Turbopack.
 
+### Branch workflow
+
+- Before starting new feature work, inspect the worktree, switch to `main` once it is safe to do so, and run `git pull --ff-only` so the feature starts from the latest remote `main`.
+- Never implement a feature directly on `main`. If a feature request begins while `main` is checked out, create and switch to a descriptively named feature branch from the freshly updated `main` before editing files.
+
 ### Before committing or pushing
 
 Run these in order and fix any failures before you commit or push:
