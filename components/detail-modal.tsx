@@ -65,28 +65,54 @@ function initials(name: string) {
 }
 
 function ProviderBadge({ provider }: { provider: WatchProvider }) {
-  const [failed, setFailed] = useState(false);
-  return (
-    <li className="detail-stagger flex min-w-[4.75rem] flex-col items-center gap-2">
-      <div className="relative size-14 overflow-hidden rounded-2xl bg-white shadow-[0_10px_30px_rgba(0,0,0,.35)] ring-1 ring-white/15">
-        {failed ? (
+  const t = useTranslations("Detail");
+  const logo =
+    provider.logoUrl ||
+    (provider.logoPath ? imageUrl(provider.logoPath, "logo") : null);
+  const [failed, setFailed] = useState(!logo);
+  const badge = (
+    <>
+      <div className="relative size-14 overflow-hidden rounded-2xl bg-white shadow-[0_10px_30px_rgba(0,0,0,.35)] ring-1 ring-white/15 transition duration-300 group-hover:-translate-y-1 group-hover:ring-white/35">
+        {failed || !logo ? (
           <span className="grid size-full place-items-center px-1 text-center text-[10px] font-bold text-zinc-800">
             {provider.name}
           </span>
         ) : (
           <Image
-            src={imageUrl(provider.logoPath, "logo")}
+            src={logo}
             alt={provider.name}
             fill
             sizes="56px"
-            className="object-cover"
+            unoptimized={Boolean(provider.logoUrl)}
+            className={
+              provider.logoUrl ? "object-contain p-1.5" : "object-cover"
+            }
             onError={() => setFailed(true)}
           />
         )}
       </div>
-      <span className="max-w-16 truncate text-center text-[11px] text-zinc-400">
+      <span className="max-w-16 truncate text-center text-[11px] text-zinc-400 transition group-hover:text-zinc-200">
         {provider.name}
       </span>
+    </>
+  );
+
+  return (
+    <li className="detail-stagger min-w-[4.75rem]">
+      {provider.link ? (
+        <a
+          href={provider.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t("providerLinkLabel", { provider: provider.name })}
+          title={t("providerLinkLabel", { provider: provider.name })}
+          className="group flex flex-col items-center gap-2 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#07070a]"
+        >
+          {badge}
+        </a>
+      ) : (
+        <div className="flex flex-col items-center gap-2">{badge}</div>
+      )}
     </li>
   );
 }
@@ -977,6 +1003,34 @@ export function DetailModal({
                     <ProviderBadge key={provider.id} provider={provider} />
                   ))}
                 </ul>
+                {view.providersSource === "tmdb" && view.watchProvidersLink && (
+                  <a
+                    href={view.watchProvidersLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-block text-sm text-zinc-400 underline decoration-zinc-700 underline-offset-4 transition hover:text-zinc-200 focus-visible:text-zinc-200 focus-visible:outline-none"
+                  >
+                    {t("viewAllWatchOptions")}
+                  </a>
+                )}
+                <p className="mt-3 text-xs text-zinc-600">
+                  {t("providerAttribution")}{" "}
+                  <a
+                    href={
+                      view.providersSource === "streaming-availability"
+                        ? "https://docs.movieofthenight.com/"
+                        : "https://www.justwatch.com/"
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline decoration-zinc-700 underline-offset-2 transition hover:text-zinc-400 focus-visible:text-zinc-400 focus-visible:outline-none"
+                  >
+                    {view.providersSource === "streaming-availability"
+                      ? "Streaming Availability API"
+                      : "JustWatch"}
+                  </a>
+                  .
+                </p>
               </section>
             )
           )}

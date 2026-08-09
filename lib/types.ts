@@ -39,10 +39,15 @@ export type PersonDetail = {
 };
 
 export type WatchProvider = {
-  id: number;
+  id: string;
   name: string;
-  logoPath: string;
+  logoPath: string | null;
+  logoUrl: string | null;
+  /** Provider-specific deep link. Null for TMDB/JustWatch fallback data. */
+  link: string | null;
 };
+
+export type WatchProviderSource = "streaming-availability" | "tmdb";
 
 /** ISO 3166-1 alpha-2 country code used for TMDB watch providers. */
 export type WatchProviderRegion = string;
@@ -95,6 +100,8 @@ export type MediaDetail = MediaItem & {
   cast: CastMember[];
   providers: WatchProvider[];
   providersRegion?: WatchProviderRegion | null;
+  providersSource: WatchProviderSource | null;
+  watchProvidersLink: string | null;
   /** True when the title is currently in theatrical release for the resolved region. */
   inCinemas?: boolean;
   director?: string | null;

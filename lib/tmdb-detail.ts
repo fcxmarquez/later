@@ -3,6 +3,7 @@ import "server-only";
 import { cache } from "react";
 import type { AppLocale } from "@/i18n/routing";
 import { tmdbLanguage } from "@/i18n/routing";
+import { getStreamingWatchProviders } from "@/lib/streaming-availability";
 import { DEFAULT_PROVIDER_REGION } from "@/lib/tmdb-region";
 import type {
   CastMember,
@@ -48,6 +49,7 @@ type TmdbProvider = {
   logo_path: string;
 };
 type TmdbProviderRegion = {
+  link?: string;
   flatrate?: TmdbProvider[];
   rent?: TmdbProvider[];
   buy?: TmdbProvider[];
@@ -110,6 +112,23 @@ function regionHasProviders(region: TmdbProviderRegion | undefined) {
   return [region.flatrate, region.ads, region.free, region.rent, region.buy]
     .filter(Boolean)
     .some((bucket) => (bucket?.length ?? 0) > 0);
+}
+
+function normalizeWatchProvidersLink(value: string | undefined) {
+  if (!value) return null;
+
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" ||
+      !["themoviedb.org", "www.themoviedb.org"].includes(url.hostname)
+    ) {
+      return null;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
 }
 
 function parseReleaseDay(value: string | undefined): Date | null {
@@ -177,6 +196,7 @@ function mapProviders(
         ? (us ?? {})
         : {};
   const providers: WatchProvider[] = [];
+  const watchProvidersLink = normalizeWatchProvidersLink(region.link);
   const seen = new Set<number>();
 
   for (const bucket of [
@@ -190,15 +210,19 @@ function mapProviders(
       if (seen.has(provider.provider_id) || !provider.logo_path) continue;
       seen.add(provider.provider_id);
       providers.push({
-        id: provider.provider_id,
+        id: `tmdb-${provider.provider_id}`,
         name: provider.provider_name.trim(),
         logoPath: provider.logo_path,
+        logoUrl: null,
+        link: null,
       });
-      if (providers.length >= 8) return { providers, providersRegion };
+      if (providers.length >= 8) {
+        return { providers, providersRegion, watchProvidersLink };
+      }
     }
   }
 
-  return { providers, providersRegion };
+  return { providers, providersRegion, watchProvidersLink };
 }
 
 function mapTrailers(detail: TmdbDetailResponse): MediaTrailer[] {
@@ -236,6 +260,7 @@ function mapDetail(
   mediaType: MediaType,
   locale: AppLocale,
   preferredRegion: WatchProviderRegion,
+  streamingProviders: WatchProvider[] | null,
 ): MediaDetail {
   const cast: CastMember[] = (detail.credits?.cast || [])
     .slice()
@@ -282,9 +307,28 @@ function mapDetail(
     mediaType,
     preferredRegion,
   );
-  const { providers, providersRegion } = inCinemas
-    ? { providers: [] as WatchProvider[], providersRegion: cinemaRegion }
-    : mapProviders(detail, preferredRegion);
+  const tmdbProviders = mapProviders(detail, preferredRegion);
+  const { providers, providersRegion, providersSource, watchProvidersLink } =
+    inCinemas
+      ? {
+          providers: [] as WatchProvider[],
+          providersRegion: cinemaRegion,
+          providersSource: null,
+          watchProvidersLink: null,
+        }
+      : streamingProviders?.length
+        ? {
+            providers: streamingProviders,
+            providersRegion: preferredRegion,
+            providersSource: "streaming-availability" as const,
+            watchProvidersLink: tmdbProviders.watchProvidersLink,
+          }
+        : {
+            ...tmdbProviders,
+            providersSource: tmdbProviders.providers.length
+              ? ("tmdb" as const)
+              : null,
+          };
 
   return {
     id: detail.id,
@@ -306,6 +350,8 @@ function mapDetail(
     cast,
     providers,
     providersRegion,
+    providersSource,
+    watchProvidersLink,
     inCinemas,
     director,
     creators,
@@ -330,13 +376,13 @@ export const getTitleDetail = cache(
         append_to_response: "credits,watch/providers,videos,release_dates",
         include_video_language: `${locale},en,null`,
       });
-      const response = await fetch(
-        `https://api.themoviedb.org/3/${mediaType}/${id}?${params}`,
-        {
+      const [response, streamingProviders] = await Promise.all([
+        fetch(`https://api.themoviedb.org/3/${mediaType}/${id}?${params}`, {
           headers: { Authorization: `Bearer ${token}` },
           next: { revalidate: 3600 },
-        },
-      );
+        }),
+        getStreamingWatchProviders(id, mediaType, preferredRegion),
+      ]);
 
       if (response.status === 404) return { status: "not-found" };
       if (!response.ok) return { status: "unavailable" };
@@ -348,7 +394,13 @@ export const getTitleDetail = cache(
 
       return {
         status: "success",
-        detail: mapDetail(data, mediaType, locale, preferredRegion),
+        detail: mapDetail(
+          data,
+          mediaType,
+          locale,
+          preferredRegion,
+          streamingProviders,
+        ),
       };
     } catch {
       return { status: "unavailable" };
