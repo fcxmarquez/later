@@ -30,7 +30,7 @@ export default async function Home({
       fallback={
         <main className="min-h-screen pb-[calc(7rem+env(safe-area-inset-bottom))] supports-[height:100dvh]:min-h-dvh">
           <FeaturedHeroSkeleton />
-          {HOME_SECTION_IDS.map((sectionId) => (
+          {HOME_SECTION_IDS.slice(0, 5).map((sectionId) => (
             <MediaRowSkeleton
               key={sectionId}
               title={t(`sections.${sectionId}.title`)}

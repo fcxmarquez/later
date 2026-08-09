@@ -57,7 +57,7 @@ export function MediaCard({
         className="absolute inset-0 z-10 cursor-pointer rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#050507]"
         aria-label={t("openDetails", { title: item.title })}
       />
-      <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-zinc-900 transition duration-500 group-hover:-translate-y-2 group-hover:scale-[1.025] group-hover:shadow-[0_20px_55px_rgba(0,0,0,.8)]">
+      <div className="pointer-events-none relative z-20 aspect-[2/3] overflow-hidden rounded-2xl bg-zinc-900 transition duration-500 group-hover:-translate-y-2 group-hover:scale-[1.025] group-hover:shadow-[0_20px_55px_rgba(0,0,0,.8)]">
         <Image
           src={imageUrl(item.posterPath)}
           alt={t("posterAlt", { title: item.title })}
@@ -71,7 +71,7 @@ export function MediaCard({
           onClick={toggleSaved}
           disabled={isPending}
           aria-busy={isPending}
-          className={`absolute right-3 bottom-3 z-20 grid size-11 cursor-pointer place-items-center rounded-full bg-white text-black opacity-100 shadow-lg transition hover:scale-110 disabled:cursor-wait disabled:opacity-70 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 ${saved && justAdded ? "watchlist-added" : ""}`}
+          className={`pointer-events-auto absolute right-3 bottom-3 z-20 grid size-11 cursor-pointer place-items-center rounded-full bg-white text-black opacity-100 shadow-lg transition hover:scale-110 disabled:cursor-wait disabled:opacity-70 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 ${saved && justAdded ? "watchlist-added" : ""}`}
           aria-label={saved ? t("removeFromList") : t("addToList")}
           aria-pressed={Boolean(saved)}
         >
