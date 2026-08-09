@@ -3,6 +3,7 @@ import type { MediaItem, MediaType } from "@/lib/types";
 
 export type TmdbListResult = {
   id: number;
+  adult?: boolean;
   title?: string;
   name?: string;
   overview?: string;
@@ -17,11 +18,11 @@ export type TmdbListResult = {
 export const HOME_SECTION_IDS = [
   "trending",
   "nowPlaying",
-  "popularMovies",
   "popularTv",
-  "topRatedMovies",
-  "onTheAir",
   "upcoming",
+  "topRatedMovies",
+  "popularMovies",
+  "onTheAir",
 ] as const;
 
 export type HomeSectionId = (typeof HOME_SECTION_IDS)[number];
@@ -57,16 +58,16 @@ export const HOME_SECTION_CONFIG: readonly HomeSectionConfig[] = [
     mediaType: "movie",
     regional: true,
   },
-  { id: "popularMovies", path: "movie/popular", mediaType: "movie" },
   { id: "popularTv", path: "tv/popular", mediaType: "tv" },
-  { id: "topRatedMovies", path: "movie/top_rated", mediaType: "movie" },
-  { id: "onTheAir", path: "tv/on_the_air", mediaType: "tv" },
   {
     id: "upcoming",
     path: "movie/upcoming",
     mediaType: "movie",
     regional: true,
   },
+  { id: "topRatedMovies", path: "movie/top_rated", mediaType: "movie" },
+  { id: "popularMovies", path: "movie/popular", mediaType: "movie" },
+  { id: "onTheAir", path: "tv/on_the_air", mediaType: "tv" },
 ];
 
 export function mapTmdbResult(
@@ -74,6 +75,8 @@ export function mapTmdbResult(
   locale: AppLocale,
   forcedMediaType?: MediaType,
 ): MediaItem | null {
+  if (item.adult) return null;
+
   const mediaType =
     forcedMediaType ??
     (item.media_type === "movie" || item.media_type === "tv"

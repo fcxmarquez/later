@@ -35,6 +35,31 @@
     "carouselDotsLabel": "Diapositivas de títulos destacados",
     "carouselSlide": "Diapositiva {current} de {total}",
     "carouselDot": "Mostrar {title}",
+    "railPrevious": "Desplazar {title} hacia atrás",
+    "railNext": "Desplazar {title} hacia adelante",
+    "dynamic": {
+      "movie": "Película",
+      "series": "Serie",
+      "unknownYear": "Año no disponible",
+      "tonightPick": {
+        "eyebrow": "Tu elección para esta noche",
+        "meta": "{type} · {year} · ★ {rating}",
+        "seeDetails": "Ver detalles",
+        "another": "Elegir otra"
+      },
+      "fromList": {
+        "title": "De tu lista",
+        "subtitle": "Las historias que guardaste más recientemente"
+      },
+      "becauseSaved": {
+        "title": "Porque guardaste {title}",
+        "subtitle": "Más historias que podrían merecer un lugar en tu lista"
+      },
+      "becauseWatched": {
+        "title": "Porque viste {title}",
+        "subtitle": "Una nueva dirección basada en algo que terminaste"
+      }
+    },
     "sections": {
       "trending": {
         "title": "Tendencias de la semana",

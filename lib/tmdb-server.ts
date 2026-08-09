@@ -2,7 +2,7 @@ import "server-only";
 
 import type { AppLocale } from "@/i18n/routing";
 import { tmdbLanguage } from "@/i18n/routing";
-import type { MediaItem } from "@/lib/types";
+import type { MediaItem, MediaType } from "@/lib/types";
 import {
   HOME_SECTION_CONFIG,
   mapTmdbResults,
@@ -23,6 +23,8 @@ export type CatalogResult = {
   error: boolean;
   reason?: TmdbErrorReason;
 };
+
+export type RecommendationResult = CatalogResult;
 
 async function fetchTmdbList(
   path: string,
@@ -117,6 +119,31 @@ export async function getCatalog(
         );
 
     return { results, error: false };
+  } catch {
+    return { results: [], error: true, reason: "unavailable" };
+  }
+}
+
+export async function getRecommendations(
+  locale: AppLocale,
+  mediaType: MediaType,
+  id: number,
+): Promise<RecommendationResult> {
+  const token = process.env.TMDB_API_TOKEN;
+  if (!token) {
+    return { results: [], error: true, reason: "unconfigured" };
+  }
+
+  try {
+    const results = await fetchTmdbList(`${mediaType}/${id}/recommendations`, {
+      token,
+      language: tmdbLanguage(locale),
+    });
+
+    return {
+      results: mapTmdbResults(results, locale, mediaType),
+      error: false,
+    };
   } catch {
     return { results: [], error: true, reason: "unavailable" };
   }

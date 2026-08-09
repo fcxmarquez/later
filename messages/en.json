@@ -35,6 +35,31 @@
     "carouselDotsLabel": "Featured title slides",
     "carouselSlide": "Slide {current} of {total}",
     "carouselDot": "Show {title}",
+    "railPrevious": "Scroll {title} backward",
+    "railNext": "Scroll {title} forward",
+    "dynamic": {
+      "movie": "Movie",
+      "series": "Series",
+      "unknownYear": "Year unavailable",
+      "tonightPick": {
+        "eyebrow": "Tonight's pick from your list",
+        "meta": "{type} · {year} · ★ {rating}",
+        "seeDetails": "See details",
+        "another": "Another pick"
+      },
+      "fromList": {
+        "title": "From your list",
+        "subtitle": "The stories you saved most recently"
+      },
+      "becauseSaved": {
+        "title": "Because you saved {title}",
+        "subtitle": "More stories that may belong on your list"
+      },
+      "becauseWatched": {
+        "title": "Because you watched {title}",
+        "subtitle": "A fresh direction based on something you finished"
+      }
+    },
     "sections": {
       "trending": {
         "title": "Trending this week",

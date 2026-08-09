@@ -4,18 +4,31 @@ import { useEffect, useMemo, useState } from "react";
 import { Check, Compass, Eye, Film, Play, Search, X } from "lucide-react";
 import { getAuthClient } from "@/lib/auth/client";
 import { migrateGuestWatchlist } from "@/lib/guest-watchlist-migration";
+import {
+  composeCatalogSections,
+  mediaIdentity,
+  selectDailyPick,
+  uniqueMedia,
+} from "@/lib/home-sections";
 import type { HomeSection } from "@/lib/tmdb";
 import type { MediaItem, SavedMedia, WatchlistMode } from "@/lib/types";
 import { useWatchlist } from "@/store/watchlist";
 import { FeaturedCarousel } from "./featured-carousel";
 import { MediaCard } from "./media-card";
-import { SearchGridSkeleton } from "./media-skeletons";
+import { MediaRow } from "./media-row";
+import { MediaRowSkeleton, SearchGridSkeleton } from "./media-skeletons";
 import { ProfileMenu } from "./profile-menu";
+import { TonightPick } from "./tonight-pick";
 import { WatchlistErrorToast } from "./watchlist-error-toast";
 
 const FEATURED_SLIDE_COUNT = 6;
 
 type View = "home" | "search" | "list";
+
+type RecommendationState = {
+  key: string;
+  results: MediaItem[];
+};
 
 type AppShellProps = {
   mode: WatchlistMode;
@@ -46,10 +59,14 @@ export function AppShell({
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "pending" | "watched">("all");
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [pickOffset, setPickOffset] = useState(0);
+  const [recommendationState, setRecommendationState] =
+    useState<RecommendationState | null>(null);
   const isGuest = mode === "guest";
   const searchKey = `${locale}|${query}`;
   const isSearching = view === "search" && resolvedSearchKey !== searchKey;
   const items = useWatchlist((state) => state.items);
+  const watchlistInitialized = useWatchlist((state) => state.initialized);
   const initialize = useWatchlist((state) => state.initialize);
   const featuredItems = useMemo(() => {
     const trending = initialHomeSections.find(
@@ -61,10 +78,86 @@ export function AppShell({
         : (initialHomeSections[0]?.results ?? []);
     return source.slice(0, FEATURED_SLIDE_COUNT);
   }, [initialHomeSections]);
+  const pendingItems = useMemo(
+    () => items.filter((item) => !item.watched),
+    [items],
+  );
+  const dailyPick = useMemo(
+    () => selectDailyPick(pendingItems, pickOffset),
+    [pendingItems, pickOffset],
+  );
+  const fromListItems = useMemo(
+    () =>
+      pendingItems
+        .filter(
+          (item) =>
+            !dailyPick || mediaIdentity(item) !== mediaIdentity(dailyPick),
+        )
+        .slice(0, 16),
+    [dailyPick, pendingItems],
+  );
+  const recommendationAnchor = useMemo(
+    () => items.find((item) => item.watched) ?? items[0] ?? null,
+    [items],
+  );
+  const recommendationAnchorId = recommendationAnchor?.id ?? null;
+  const recommendationAnchorType = recommendationAnchor?.mediaType ?? null;
+  const recommendationKey = recommendationAnchor
+    ? `${locale}:${mediaIdentity(recommendationAnchor)}`
+    : null;
+
   useEffect(() => {
     initialize(initialWatchlist, mode);
     if (!isGuest) void migrateGuestWatchlist();
   }, [initialWatchlist, initialize, isGuest, mode]);
+  useEffect(() => {
+    if (
+      !watchlistInitialized ||
+      view !== "home" ||
+      !recommendationAnchorId ||
+      !recommendationAnchorType ||
+      !recommendationKey ||
+      recommendationState?.key === recommendationKey
+    ) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const params = new URLSearchParams({
+      id: String(recommendationAnchorId),
+      mediaType: recommendationAnchorType,
+      locale,
+    });
+
+    fetch(`/api/tmdb/recommendations?${params}`, {
+      signal: controller.signal,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("recommendations failed");
+        return response.json();
+      })
+      .then((data: { results?: MediaItem[] }) => {
+        setRecommendationState({
+          key: recommendationKey,
+          results: Array.isArray(data.results) ? data.results : [],
+        });
+      })
+      .catch((fetchError: Error) => {
+        if (fetchError.name !== "AbortError") {
+          setRecommendationState({ key: recommendationKey, results: [] });
+        }
+      });
+
+    return () => controller.abort();
+  }, [
+    locale,
+    recommendationAnchorId,
+    recommendationAnchorType,
+    recommendationKey,
+    recommendationState?.key,
+    view,
+    watchlistInitialized,
+  ]);
   useEffect(() => {
     if (view !== "search") return;
     const controller = new AbortController();
@@ -105,6 +198,43 @@ export function AppShell({
       ),
     [items, filter],
   );
+  const recommendationItems = useMemo(() => {
+    if (!recommendationKey || recommendationState?.key !== recommendationKey) {
+      return [];
+    }
+
+    return uniqueMedia(recommendationState.results, [
+      ...items,
+      ...featuredItems,
+    ]).slice(0, 16);
+  }, [featuredItems, items, recommendationKey, recommendationState]);
+  const catalogSections = useMemo(
+    () =>
+      composeCatalogSections(
+        initialHomeSections,
+        [...items, ...featuredItems, ...recommendationItems],
+        items.length > 0 ? 4 : 5,
+      ),
+    [featuredItems, initialHomeSections, items, recommendationItems],
+  );
+  const recommendationTitle = recommendationAnchor
+    ? recommendationAnchor.watched
+      ? tHome("dynamic.becauseWatched.title", {
+          title: recommendationAnchor.title,
+        })
+      : tHome("dynamic.becauseSaved.title", {
+          title: recommendationAnchor.title,
+        })
+    : "";
+  const recommendationSubtitle = recommendationAnchor
+    ? recommendationAnchor.watched
+      ? tHome("dynamic.becauseWatched.subtitle")
+      : tHome("dynamic.becauseSaved.subtitle")
+    : "";
+  const isRecommendationLoading = Boolean(
+    recommendationKey && recommendationState?.key !== recommendationKey,
+  );
+  const hasPersonalizedHome = Boolean(dailyPick || fromListItems.length);
   const nav = (next: View) => {
     setView(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -161,7 +291,7 @@ export function AppShell({
 
       {view === "home" && (
         <>
-          {initialHomeError ? (
+          {initialHomeError && !hasPersonalizedHome ? (
             <section className="safe-page-x flex min-h-[70vh] flex-col items-center justify-center text-center supports-[height:100svh]:min-h-[70svh]">
               <Film size={34} className="text-zinc-600" />
               <h2 className="mt-4 text-xl font-semibold">
@@ -171,7 +301,7 @@ export function AppShell({
                 {tHome("loadErrorBody")}
               </p>
             </section>
-          ) : featuredItems.length === 0 ? (
+          ) : featuredItems.length === 0 && !hasPersonalizedHome ? (
             <section className="safe-page-x flex min-h-[70vh] flex-col items-center justify-center text-center supports-[height:100svh]:min-h-[70svh]">
               <Film size={34} className="text-zinc-600" />
               <h2 className="mt-4 text-xl font-semibold">
@@ -184,7 +314,39 @@ export function AppShell({
           ) : (
             <>
               <FeaturedCarousel items={featuredItems} />
-              {initialHomeSections.map((section) => (
+              {dailyPick ? (
+                <TonightPick
+                  item={dailyPick}
+                  canShuffle={pendingItems.length > 1}
+                  firstContent={featuredItems.length === 0}
+                  onShuffle={() =>
+                    setPickOffset(
+                      (current) => (current + 1) % pendingItems.length,
+                    )
+                  }
+                />
+              ) : null}
+              {recommendationAnchor && isRecommendationLoading ? (
+                <MediaRowSkeleton
+                  title={recommendationTitle}
+                  subtitle={recommendationSubtitle}
+                  count={6}
+                />
+              ) : recommendationItems.length >= 4 ? (
+                <MediaRow
+                  title={recommendationTitle}
+                  subtitle={recommendationSubtitle}
+                  items={recommendationItems}
+                />
+              ) : null}
+              {fromListItems.length ? (
+                <MediaRow
+                  title={tHome("dynamic.fromList.title")}
+                  subtitle={tHome("dynamic.fromList.subtitle")}
+                  items={fromListItems}
+                />
+              ) : null}
+              {catalogSections.map((section) => (
                 <MediaRow
                   key={section.id}
                   title={tHome(`sections.${section.id}.title`)}
@@ -392,29 +554,5 @@ export function AppShell({
       </nav>
       <WatchlistErrorToast />
     </main>
-  );
-}
-function MediaRow({
-  title,
-  subtitle,
-  items,
-}: {
-  title: string;
-  subtitle: string;
-  items: MediaItem[];
-}) {
-  return (
-    <section className="safe-page-left mb-16">
-      <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h2>
-      <p className="mt-1 text-sm text-zinc-500">{subtitle}</p>
-      <div className="safe-page-right hide-scrollbar mt-6 flex gap-4 overflow-x-auto pb-8 sm:gap-5">
-        {items.map((item) => (
-          <MediaCard
-            key={`${title}-${item.mediaType}-${item.id}`}
-            item={item}
-          />
-        ))}
-      </div>
-    </section>
   );
 }
