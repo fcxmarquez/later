@@ -25,6 +25,12 @@ const FEATURED_SLIDE_COUNT = 6;
 
 type View = "home" | "search" | "list";
 
+const MOBILE_NAV_INDICATOR_POSITION: Record<View, string> = {
+  home: "translate-x-0",
+  search: "translate-x-[3.25rem]",
+  list: "translate-x-[6.5rem]",
+};
+
 type RecommendationState = {
   key: string;
   results: MediaItem[];
@@ -533,6 +539,10 @@ export function AppShell({
       )}
 
       <nav className="glass fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 z-40 flex -translate-x-1/2 gap-1 rounded-full p-1.5 shadow-2xl sm:hidden">
+        <span
+          aria-hidden="true"
+          className={`pointer-events-none absolute top-1.5 left-1.5 size-12 rounded-full bg-white shadow-lg transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${MOBILE_NAV_INDICATOR_POSITION[view]}`}
+        />
         {(
           [
             ["home", Compass, tNav("home")],
@@ -545,7 +555,7 @@ export function AppShell({
             type="button"
             onClick={() => nav(key)}
             aria-current={view === key ? "page" : undefined}
-            className={`grid size-12 place-items-center rounded-full ${view === key ? "bg-white text-black" : "text-zinc-400"}`}
+            className={`relative z-10 grid size-12 place-items-center rounded-full transition-[color,transform] duration-300 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none motion-reduce:transition-none ${view === key ? "scale-105 text-black" : "text-zinc-400 hover:text-zinc-200"}`}
             aria-label={label}
           >
             <Icon size={20} />
