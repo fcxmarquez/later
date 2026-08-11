@@ -112,9 +112,12 @@
     "title": "Mi lista",
     "count": "{count, plural, =1 {# historia guardada} other {# historias guardadas}}",
     "onThisDevice": " · en este dispositivo",
-    "filterAll": "Todas",
+    "statusFiltersLabel": "Filtrar por estado",
+    "mediaTypeFiltersLabel": "Filtrar por tipo",
     "filterPending": "Pendientes",
     "filterWatched": "Vistas",
+    "filterMovies": "Películas",
+    "filterSeries": "Series",
     "emptyTitle": "Tu lista está esperando",
     "emptyBody": "Explora el catálogo y guarda todo lo que quieras ver después.",
     "emptyCta": "Explorar títulos",
@@ -123,7 +126,10 @@
     "noPendingCta": "Ver historias vistas",
     "noWatchedTitle": "Aún no has marcado ninguna como vista",
     "noWatchedBody": "Cuando termines una historia, podrás encontrarla aquí.",
-    "noWatchedCta": "Ver historias pendientes"
+    "noWatchedCta": "Ver historias pendientes",
+    "noMatchingMediaTitle": "No hay títulos de este tipo",
+    "noMatchingMediaBody": "Prueba con el otro tipo o muestra todas tus películas y series.",
+    "noMatchingMediaCta": "Mostrar películas y series"
   },
   "MediaCard": {
     "openDetails": "Ver detalles de {title}",

@@ -1,7 +1,16 @@
 "use client";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
-import { Check, Compass, Eye, Film, Play, Search, X } from "lucide-react";
+import {
+  Bookmark,
+  Check,
+  Compass,
+  Eye,
+  Film,
+  Play,
+  Search,
+  X,
+} from "lucide-react";
 import { getAuthClient } from "@/lib/auth/client";
 import { migrateGuestWatchlist } from "@/lib/guest-watchlist-migration";
 import {
@@ -11,7 +20,12 @@ import {
   uniqueMedia,
 } from "@/lib/home-sections";
 import type { HomeSection } from "@/lib/tmdb";
-import type { MediaItem, SavedMedia, WatchlistMode } from "@/lib/types";
+import type {
+  MediaItem,
+  MediaType,
+  SavedMedia,
+  WatchlistMode,
+} from "@/lib/types";
 import { useWatchlist } from "@/store/watchlist";
 import { FeaturedCarousel } from "./featured-carousel";
 import { MediaCard } from "./media-card";
@@ -63,7 +77,12 @@ export function AppShell({
   );
   const [searchError, setSearchError] = useState(false);
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<"all" | "pending" | "watched">("all");
+  const [statusFilter, setStatusFilter] = useState<"pending" | "watched">(
+    "pending",
+  );
+  const [mediaTypeFilter, setMediaTypeFilter] = useState<MediaType | null>(
+    null,
+  );
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [pickOffset, setPickOffset] = useState(0);
   const [recommendationState, setRecommendationState] =
@@ -195,14 +214,19 @@ export function AppShell({
       controller.abort();
     };
   }, [locale, query, searchKey, view]);
+  const statusItems = useMemo(
+    () =>
+      items.filter((item) =>
+        statusFilter === "watched" ? item.watched : !item.watched,
+      ),
+    [items, statusFilter],
+  );
   const list = useMemo(
     () =>
-      items.filter(
-        (item) =>
-          filter === "all" ||
-          (filter === "watched" ? item.watched : !item.watched),
-      ),
-    [items, filter],
+      mediaTypeFilter
+        ? statusItems.filter((item) => item.mediaType === mediaTypeFilter)
+        : statusItems,
+    [mediaTypeFilter, statusItems],
   );
   const recommendationItems = useMemo(() => {
     if (!recommendationKey || recommendationState?.key !== recommendationKey) {
@@ -447,24 +471,63 @@ export function AppShell({
                 {isGuest ? tList("onThisDevice") : ""}
               </p>
             </div>
-            <div className="flex rounded-full bg-white/10 p-1">
-              {(
-                [
-                  ["all", tList("filterAll")],
-                  ["pending", tList("filterPending")],
-                  ["watched", tList("filterWatched")],
-                ] as const
-              ).map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setFilter(key)}
-                  aria-pressed={filter === key}
-                  className={`min-h-11 rounded-full px-4 py-2 text-sm ${filter === key ? "bg-white text-black" : "text-zinc-400"}`}
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              <div
+                role="group"
+                aria-label={tList("statusFiltersLabel")}
+                className="relative isolate grid grid-cols-2 rounded-full bg-white/10 p-1"
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/2)] rounded-full bg-white shadow-lg transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${statusFilter === "watched" ? "translate-x-full" : "translate-x-0"}`}
+                />
+                {(
+                  [
+                    ["pending", tList("filterPending")],
+                    ["watched", tList("filterWatched")],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setStatusFilter(key)}
+                    aria-pressed={statusFilter === key}
+                    className={`relative z-10 min-h-11 rounded-full px-4 py-2 text-sm transition-[color,transform,scale] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${statusFilter === key ? "scale-[1.02] text-black" : "text-zinc-400 hover:text-zinc-200"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div
+                role="group"
+                aria-label={tList("mediaTypeFiltersLabel")}
+                className="relative isolate grid grid-cols-2 rounded-full bg-white/10 p-1"
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/2)] rounded-full bg-white shadow-lg transition-[transform,translate,scale,rotate,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${mediaTypeFilter === null ? "scale-90 opacity-0" : mediaTypeFilter === "tv" ? "translate-x-full scale-100 opacity-100" : "translate-x-0 scale-100 opacity-100"}`}
+                />
+                {(
+                  [
+                    ["movie", tList("filterMovies")],
+                    ["tv", tList("filterSeries")],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() =>
+                      setMediaTypeFilter((current) =>
+                        current === key ? null : key,
+                      )
+                    }
+                    aria-pressed={mediaTypeFilter === key}
+                    className={`relative z-10 min-h-11 rounded-full px-4 py-2 text-sm transition-[color,transform,scale] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${mediaTypeFilter === key ? "scale-[1.02] text-black" : "text-zinc-400 hover:text-zinc-200"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           {list.length ? (
@@ -496,7 +559,7 @@ export function AppShell({
                 {tList("emptyCta")}
               </button>
             </div>
-          ) : filter === "pending" ? (
+          ) : statusItems.length === 0 && statusFilter === "pending" ? (
             <div className="mt-20 flex flex-col items-center text-center">
               <span className="grid size-20 place-items-center rounded-full bg-emerald-400/10">
                 <Check size={32} className="text-emerald-400" />
@@ -509,13 +572,13 @@ export function AppShell({
               </p>
               <button
                 type="button"
-                onClick={() => setFilter("watched")}
+                onClick={() => setStatusFilter("watched")}
                 className="mt-6 rounded-full bg-white px-6 py-3 font-semibold text-black"
               >
                 {tList("noPendingCta")}
               </button>
             </div>
-          ) : (
+          ) : statusItems.length === 0 ? (
             <div className="mt-20 flex flex-col items-center text-center">
               <span className="grid size-20 place-items-center rounded-full bg-white/5">
                 <Eye size={32} className="text-zinc-600" />
@@ -528,10 +591,29 @@ export function AppShell({
               </p>
               <button
                 type="button"
-                onClick={() => setFilter("pending")}
+                onClick={() => setStatusFilter("pending")}
                 className="mt-6 rounded-full bg-white px-6 py-3 font-semibold text-black"
               >
                 {tList("noWatchedCta")}
+              </button>
+            </div>
+          ) : (
+            <div className="mt-20 flex flex-col items-center text-center">
+              <span className="grid size-20 place-items-center rounded-full bg-white/5">
+                <Film size={32} className="text-zinc-600" />
+              </span>
+              <h2 className="mt-6 text-2xl font-semibold">
+                {tList("noMatchingMediaTitle")}
+              </h2>
+              <p className="mt-2 max-w-sm text-zinc-500">
+                {tList("noMatchingMediaBody")}
+              </p>
+              <button
+                type="button"
+                onClick={() => setMediaTypeFilter(null)}
+                className="mt-6 rounded-full bg-white px-6 py-3 font-semibold text-black"
+              >
+                {tList("noMatchingMediaCta")}
               </button>
             </div>
           )}
@@ -547,7 +629,7 @@ export function AppShell({
           [
             ["home", Compass, tNav("home")],
             ["search", Search, tNav("explore")],
-            ["list", Eye, tNav("myList")],
+            ["list", Bookmark, tNav("myList")],
           ] as const
         ).map(([key, Icon, label]) => (
           <button

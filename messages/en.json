@@ -112,9 +112,12 @@
     "title": "My list",
     "count": "{count, plural, =1 {# saved story} other {# saved stories}}",
     "onThisDevice": " · on this device",
-    "filterAll": "All",
+    "statusFiltersLabel": "Filter by status",
+    "mediaTypeFiltersLabel": "Filter by type",
     "filterPending": "Pending",
     "filterWatched": "Watched",
+    "filterMovies": "Movies",
+    "filterSeries": "Series",
     "emptyTitle": "Your list is waiting",
     "emptyBody": "Browse the catalog and save everything you want to watch later.",
     "emptyCta": "Explore titles",
@@ -123,7 +126,10 @@
     "noPendingCta": "See watched stories",
     "noWatchedTitle": "You haven't marked any as watched yet",
     "noWatchedBody": "When you finish a story, you'll find it here.",
-    "noWatchedCta": "See pending stories"
+    "noWatchedCta": "See pending stories",
+    "noMatchingMediaTitle": "No titles of this type",
+    "noMatchingMediaBody": "Try the other type or show all your movies and series.",
+    "noMatchingMediaCta": "Show movies and series"
   },
   "MediaCard": {
     "openDetails": "See details for {title}",
