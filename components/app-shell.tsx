@@ -279,11 +279,11 @@ export function AppShell({
   };
   return (
     <main className="min-h-screen pb-[calc(7rem+env(safe-area-inset-bottom))] supports-[height:100dvh]:min-h-dvh">
-      <header className="safe-page-x fixed inset-x-0 top-0 z-40 flex h-[calc(5rem+env(safe-area-inset-top))] items-center justify-between bg-gradient-to-b from-black/85 to-transparent pt-[env(safe-area-inset-top)]">
+      <header className="safe-page-x fixed inset-x-0 top-0 z-40 grid h-[calc(5rem+env(safe-area-inset-top))] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center bg-gradient-to-b from-black/85 to-transparent pt-[env(safe-area-inset-top)]">
         <button
           type="button"
           onClick={() => nav("home")}
-          className="flex min-h-11 items-center gap-2 text-xl font-bold tracking-tight"
+          className="flex min-h-11 items-center gap-2 justify-self-start text-xl font-bold tracking-tight"
         >
           <span className="grid size-9 place-items-center rounded-xl bg-white text-black">
             <Play size={17} fill="currentColor" />
@@ -309,7 +309,7 @@ export function AppShell({
             </button>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-self-end">
           <ProfileMenu
             isGuest={isGuest}
             userName={user?.name ?? null}
