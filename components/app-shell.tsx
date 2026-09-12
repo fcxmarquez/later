@@ -290,7 +290,10 @@ export function AppShell({
           </span>{" "}
           later
         </button>
-        <nav className="glass hidden items-center gap-1 rounded-full p-1 sm:flex">
+        <nav
+          aria-label={tNav("primaryNavigation")}
+          className="glass hidden items-center gap-1 rounded-full p-1 sm:flex"
+        >
           {(
             [
               ["home", tNav("home")],
@@ -620,7 +623,10 @@ export function AppShell({
         </section>
       )}
 
-      <nav className="glass fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 z-40 flex -translate-x-1/2 gap-1 rounded-full p-1.5 shadow-2xl sm:hidden">
+      <nav
+        aria-label={tNav("primaryNavigation")}
+        className="glass fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 z-40 flex -translate-x-1/2 gap-1 rounded-full p-1.5 shadow-2xl sm:hidden"
+      >
         <span
           aria-hidden="true"
           className={`pointer-events-none absolute top-1.5 left-1.5 size-12 rounded-full bg-white shadow-lg transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${MOBILE_NAV_INDICATOR_POSITION[view]}`}
