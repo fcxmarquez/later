@@ -2,7 +2,7 @@
 
 import Autoplay from "embla-carousel-autoplay";
 import useEmblaCarousel from "embla-carousel-react";
-import { Bookmark, Check, Play } from "lucide-react";
+import { Bookmark, Check, LoaderCircle, Play } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -201,7 +201,13 @@ function FeaturedWatchlistButton({ item }: { item: MediaItem }) {
         saved && justAdded && "watchlist-added",
       )}
     >
-      {saved ? <Check size={19} /> : <Bookmark size={19} />}{" "}
+      {isPending ? (
+        <LoaderCircle className="animate-spin" size={19} aria-hidden="true" />
+      ) : saved ? (
+        <Check size={19} />
+      ) : (
+        <Bookmark size={19} />
+      )}{" "}
       {saved ? tHome("inYourList") : tHome("myList")}
     </button>
   );
