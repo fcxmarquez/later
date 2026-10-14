@@ -2,10 +2,10 @@
 
 import Autoplay from "embla-carousel-autoplay";
 import useEmblaCarousel from "embla-carousel-react";
-import { Bookmark, Check, LoaderCircle, Play } from "lucide-react";
+import { Bookmark, Check, LoaderCircle, Pause, Play } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { imageUrl } from "@/lib/catalog";
 import type { MediaItem } from "@/lib/types";
@@ -21,6 +21,8 @@ type FeaturedCarouselProps = {
 export function FeaturedCarousel({ items }: FeaturedCarouselProps) {
   const tHome = useTranslations("Home");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const pausedRef = useRef(false);
   const canAutoplay = items.length > 1;
   const [plugins] = useState(() => [
     Autoplay({
@@ -53,17 +55,36 @@ export function FeaturedCarousel({ items }: FeaturedCarouselProps) {
     if (!emblaApi || !canAutoplay) return;
 
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const autoplay = () => emblaApi.plugins().autoplay;
+    const holdPause = () => {
+      queueMicrotask(() => {
+        if (pausedRef.current) autoplay()?.stop();
+      });
+    };
     const syncMotionPreference = () => {
-      const plugin = emblaApi.plugins().autoplay;
-      if (!plugin) return;
-      if (media.matches) plugin.stop();
-      else plugin.play();
+      if (media.matches) pausedRef.current = true;
+      setIsPaused(pausedRef.current);
+      if (pausedRef.current) autoplay()?.stop();
+      else autoplay()?.play();
     };
 
+    emblaApi.on("autoplay:play", holdPause);
     syncMotionPreference();
     media.addEventListener("change", syncMotionPreference);
-    return () => media.removeEventListener("change", syncMotionPreference);
+    return () => {
+      emblaApi.off("autoplay:play", holdPause);
+      media.removeEventListener("change", syncMotionPreference);
+    };
   }, [canAutoplay, emblaApi]);
+
+  const toggleAutoplay = useCallback(() => {
+    const plugin = emblaApi?.plugins().autoplay;
+    if (!plugin) return;
+    pausedRef.current = !pausedRef.current;
+    setIsPaused(pausedRef.current);
+    if (pausedRef.current) plugin.stop();
+    else plugin.play();
+  }, [emblaApi]);
 
   const scrollTo = useCallback(
     (index: number) => {
@@ -133,6 +154,22 @@ export function FeaturedCarousel({ items }: FeaturedCarouselProps) {
           })}
         </div>
       </div>
+
+      {canAutoplay ? (
+        <button
+          type="button"
+          onClick={toggleAutoplay}
+          aria-label={tHome(isPaused ? "carouselPlay" : "carouselPause")}
+          title={tHome(isPaused ? "carouselPlay" : "carouselPause")}
+          className="glass absolute top-[calc(5.5rem+env(safe-area-inset-top))] right-[max(var(--page-gutter),env(safe-area-inset-right))] z-20 grid size-11 place-items-center rounded-full text-white transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+        >
+          {isPaused ? (
+            <Play size={16} fill="currentColor" aria-hidden="true" />
+          ) : (
+            <Pause size={16} fill="currentColor" aria-hidden="true" />
+          )}
+        </button>
+      ) : null}
 
       {canAutoplay ? (
         <div

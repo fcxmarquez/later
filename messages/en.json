@@ -36,6 +36,8 @@
     "carouselDotsLabel": "Featured title slides",
     "carouselSlide": "Slide {current} of {total}",
     "carouselDot": "Show {title}",
+    "carouselPause": "Pause automatic slides",
+    "carouselPlay": "Resume automatic slides",
     "railPrevious": "Scroll {title} backward",
     "railNext": "Scroll {title} forward",
     "dynamic": {

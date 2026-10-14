@@ -36,6 +36,8 @@
     "carouselDotsLabel": "Diapositivas de títulos destacados",
     "carouselSlide": "Diapositiva {current} de {total}",
     "carouselDot": "Mostrar {title}",
+    "carouselPause": "Pausar el avance automático",
+    "carouselPlay": "Reanudar el avance automático",
     "railPrevious": "Desplazar {title} hacia atrás",
     "railNext": "Desplazar {title} hacia adelante",
     "dynamic": {
