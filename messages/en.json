@@ -137,7 +137,9 @@
     "posterAlt": "Poster for {title}",
     "alreadySaved": "Already in your list",
     "addToList": "Add to my list",
-    "removeFromList": "Remove from my list"
+    "addToListNamed": "Add {title} to my list",
+    "removeFromList": "Remove from my list",
+    "removeFromListNamed": "Remove {title} from my list"
   },
   "Detail": {
     "metadataTitle": "{title} — Later",
