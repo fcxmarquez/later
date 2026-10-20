@@ -137,7 +137,9 @@
     "posterAlt": "Póster de {title}",
     "alreadySaved": "Ya está en tu lista",
     "addToList": "Añadir a mi lista",
-    "removeFromList": "Quitar de mi lista"
+    "addToListNamed": "Añadir {title} a mi lista",
+    "removeFromList": "Quitar de mi lista",
+    "removeFromListNamed": "Quitar {title} de mi lista"
   },
   "Detail": {
     "metadataTitle": "{title} — Later",

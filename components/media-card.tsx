@@ -71,8 +71,12 @@ export function MediaCard({
           onClick={toggleSaved}
           disabled={isPending}
           aria-busy={isPending}
-          className={`pointer-events-auto absolute right-3 bottom-3 z-20 grid size-11 cursor-pointer place-items-center rounded-full bg-white text-black opacity-100 shadow-lg transition hover:scale-110 disabled:cursor-wait disabled:opacity-70 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 ${saved && justAdded ? "watchlist-added" : ""}`}
-          aria-label={saved ? t("removeFromList") : t("addToList")}
+          className={`pointer-events-auto absolute right-3 bottom-3 z-20 grid size-11 cursor-pointer place-items-center rounded-full bg-white text-black opacity-100 shadow-lg transition hover:scale-110 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none disabled:cursor-wait disabled:opacity-70 pointer-fine:sm:opacity-0 pointer-fine:sm:group-hover:opacity-100 pointer-fine:sm:focus-visible:opacity-100 ${saved && justAdded ? "watchlist-added" : ""}`}
+          aria-label={
+            saved
+              ? t("removeFromListNamed", { title: item.title })
+              : t("addToListNamed", { title: item.title })
+          }
           aria-pressed={Boolean(saved)}
         >
           {saved ? <Check size={19} /> : <Plus size={20} />}
