@@ -227,7 +227,7 @@ function TrailerCard({
               height: rect.height,
             });
           }}
-          className="group absolute inset-0 grid place-items-center"
+          className="group absolute inset-0 grid place-items-center rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset"
           aria-label={t("playTrailer", { name: trailer.name })}
         >
           {!thumbFailed ? (
@@ -384,7 +384,7 @@ function TrailerLightbox({
           event.stopPropagation();
           requestClose();
         }}
-        className="glass absolute top-[max(1.25rem,env(safe-area-inset-top))] right-[max(1.25rem,env(safe-area-inset-right))] z-20 grid size-11 place-items-center rounded-full transition hover:bg-white hover:text-black sm:top-[max(1.75rem,env(safe-area-inset-top))] sm:right-[max(2rem,env(safe-area-inset-right))]"
+        className="glass absolute top-[max(1.25rem,env(safe-area-inset-top))] right-[max(1.25rem,env(safe-area-inset-right))] z-20 grid size-11 place-items-center rounded-full transition hover:bg-white hover:text-black focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none sm:top-[max(1.75rem,env(safe-area-inset-top))] sm:right-[max(2rem,env(safe-area-inset-right))]"
         aria-label={t("closeTrailer")}
       >
         <X />
@@ -859,7 +859,7 @@ export function DetailModal({
             ref={closeButtonRef}
             type="button"
             onClick={requestClose}
-            className="glass absolute top-[max(1.25rem,env(safe-area-inset-top))] right-[max(1.25rem,env(safe-area-inset-right))] z-20 grid size-11 place-items-center rounded-full transition hover:bg-white hover:text-black sm:top-[max(1.75rem,env(safe-area-inset-top))] sm:right-[max(2rem,env(safe-area-inset-right))]"
+            className="glass absolute top-[max(1.25rem,env(safe-area-inset-top))] right-[max(1.25rem,env(safe-area-inset-right))] z-20 grid size-11 place-items-center rounded-full transition hover:bg-white hover:text-black focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none sm:top-[max(1.75rem,env(safe-area-inset-top))] sm:right-[max(2rem,env(safe-area-inset-right))]"
             aria-label={t("close")}
           >
             <X />
@@ -913,7 +913,7 @@ export function DetailModal({
                     onClick={() => void add(view)}
                     disabled={isPending}
                     aria-busy={isPending}
-                    className="flex items-center gap-2 rounded-full bg-white px-6 py-3.5 font-semibold text-black transition hover:scale-[1.03] disabled:cursor-wait disabled:opacity-70"
+                    className="flex items-center gap-2 rounded-full bg-white px-6 py-3.5 font-semibold text-black transition hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#07070a] focus-visible:outline-none disabled:cursor-wait disabled:opacity-70"
                   >
                     <Plus size={19} /> {t("addToList")}
                   </button>
@@ -924,7 +924,7 @@ export function DetailModal({
                       onClick={() => void toggleWatched(view)}
                       disabled={isPending}
                       aria-busy={isPending}
-                      className={`flex items-center gap-2 rounded-full px-6 py-3.5 font-semibold transition hover:scale-[1.03] disabled:cursor-wait disabled:opacity-70 ${saved.watched ? "bg-emerald-400 text-black" : "bg-white text-black"}`}
+                      className={`flex items-center gap-2 rounded-full px-6 py-3.5 font-semibold transition hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#07070a] focus-visible:outline-none disabled:cursor-wait disabled:opacity-70 ${saved.watched ? "bg-emerald-400 text-black" : "bg-white text-black"}`}
                     >
                       {saved.watched ? <Check size={19} /> : <Eye size={19} />}{" "}
                       {saved.watched ? t("alreadyWatched") : t("markWatched")}
@@ -934,7 +934,7 @@ export function DetailModal({
                       onClick={() => void remove(view)}
                       disabled={isPending}
                       aria-busy={isPending}
-                      className="rounded-full bg-white/10 px-6 py-3.5 font-semibold backdrop-blur-md transition hover:bg-white/20 disabled:cursor-wait disabled:opacity-70"
+                      className="rounded-full bg-white/10 px-6 py-3.5 font-semibold backdrop-blur-md transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none disabled:cursor-wait disabled:opacity-70"
                     >
                       {t("removeFromList")}
                     </button>
