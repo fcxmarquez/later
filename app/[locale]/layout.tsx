@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
 import {
   getMessages,
@@ -61,6 +62,7 @@ export default async function LocaleLayout({
           {children}
           {modal}
         </NextIntlClientProvider>
+        <Analytics />
       </body>
     </html>
   );
