@@ -145,6 +145,7 @@ export function ProfileMenu({
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-controls={menuId}
+        aria-label={label}
         title={isGuest ? t("guestMode") : t("signedIn")}
         onClick={toggleMenu}
         onKeyDown={(event) => {
